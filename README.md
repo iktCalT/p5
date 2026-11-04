@@ -390,8 +390,59 @@ the unit 1/G for gravity.
 - When locking a piece in place, remember to reset the counter tracking time
   since a piece has moved down a row due to gravity.
 
-## Other Parts
-Currently being worked on. Should be out very soon.
+## Part 2: Single Player Tetris Bot
+### Setup
+For this part, you will implement a bot to play single player Tetris. First,
+for grading reasons you should create the following enums, structs, and trait
+as follows to module `bot`:
+```rs
+pub enum TetrominoType {
+    I, J, L, O, S, Z, T
+}
+
+pub enum TetrisAction {
+    C, W, L, R, D, H, E
+}
+
+pub struct BoardState {
+    pub tetromino_row: usize,
+    pub tetromino_col: usize,
+    pub tetromino_rotation: usize,
+    pub tetromino: TetrominoType,
+
+    pub garbage_lines: [Option<usize>; 20],
+}
+
+pub trait Bot {
+    /// Create a new bot.
+    fn new() -> Self;
+
+    /// Gets an action to perform based on the board state. This should be called
+    /// every frame. 
+    fn get_move(&mut self, &board_state: BoardState) -> TetrisAction;
+}
+```
+We will explain `garbage_lines` in Part 3, feel free to ignore it for now.
+
+Now, add the following unit test to your `tests` directory where
+`SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
+```rs
+use p5_tetris::bot::{TetronimoType, TetrisAction, BoardState, Bot};
+
+type SinglePlayerBot = todo!("Replace this todo with your single player bot!");
+
+#[test]
+fn create_bot_and_get_any_action_test() {
+    let bot = SinglePlayerBot::new();
+    let _ = bot.get_move(BoardState {
+        tetromino_row: 20,
+        tetromino_col: 4,
+        tetromino_rotation: 0,
+        tetromino: TetrominoType::J,
+        garbage_lines: [None; 20],
+    });
+}
+```
 
 ## Testing
 We use [runt](https://github.com/rachitnigam/runt) for integration tests. You
