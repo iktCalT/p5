@@ -54,7 +54,7 @@ submitted for (1).
 ### AI Policy
 As a reminder, you must not use LLMs to generate any part of your submission,
 including code, comments, or writing in your design doc. Asking an LLM how to
-implement something using that as inspiration violates this policy.
+implement something and using that as inspiration violates this policy.
 
 We discourage, but begrudgingly allow the use of LLMs for seeking out
 documentation or descriptions of high level concepts. Though, please seek 
@@ -158,7 +158,7 @@ next approaching piece.
 
 ### Game Behavior
 #### Game State
-We base our game behavior on the
+We loosely base our game behavior on the
 [Tetris Guidelines](https://tetris.wiki/Tetris_Guideline). Our game will run in
 discrete "frames" (which I might also refer to as ticks). Typically there are
 60 frames per second, though that is irrelevant for this part of the assignment.
