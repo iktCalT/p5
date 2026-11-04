@@ -419,7 +419,7 @@ pub trait Bot {
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame. 
-    fn get_move(&mut self, &board_state: BoardState) -> TetrisAction;
+    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
 }
 ```
 We will explain `garbage_lines` in Part 3, feel free to ignore it for now.
@@ -427,14 +427,14 @@ We will explain `garbage_lines` in Part 3, feel free to ignore it for now.
 Now, add the following unit test to your `tests` directory where
 `SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
 ```rs
-use p5_tetris::bot::{TetronimoType, TetrisAction, BoardState, Bot};
+use p5_tetris::bot::{BoardState, Bot, TetrominoType};
 
-type SinglePlayerBot = todo!("Replace this todo with your single player bot!");
+type SinglePlayerBot = /* Replace this todo with your single player bot! */;
 
 #[test]
 fn create_bot_and_get_any_action_test() {
-    let bot = SinglePlayerBot::new();
-    let _ = bot.get_move(BoardState {
+    let mut bot = SinglePlayerBot::new();
+    let _ = bot.get_move(&BoardState {
         tetromino_row: 20,
         tetromino_col: 4,
         tetromino_rotation: 0,
