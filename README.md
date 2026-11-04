@@ -1,4 +1,9 @@
 # Tetris
+## Changelog
+
+2026-11-04:
+- Initial release
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
@@ -47,8 +52,8 @@ much as a writeup, and it may make sense to write this before starting your
 code (though you will probably want to edit it when you finish). We will
 specify what you need to put in this below as well.
 
-(1) will be due XXX as a check-in.
-(2), (3), and (4) will be due XXX and will possibly contain edits to your work
+(1) will be due Nov 11 as a check-in.
+(2), (3), and (4) will be due Nov 18 and will possibly contain edits to your work
 submitted for (1).
 
 ### AI Policy
