@@ -3,6 +3,7 @@
 
 2026-11-04:
 - Initial release
+- Add resources flag to writeup
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -72,10 +73,12 @@ inputs describing what a player's action on every frame of gameplay.
 You must support the `--simulate-inputs-single-player <inputs-file>` flag. The
 flag takes a single argument, a file describing the input format. Upon
 receiving a valid file, your binary should print to stdout a serialization of
-the board state. As an example (assuming you are running your project with
-`cargo run`):
+the board state. You must also support the flag `resources` which specifies a
+directory containing JSON files with information such as tetromino shapes,
+config, or wall kicks (these will all be explained later). As an example
+(assuming you are running your project with `cargo run`):
 ```
-$ cargo run -- --simulate-inputs-single-player input-file.txt
+$ cargo run -- --simulate-inputs-single-player input-file.txt --resources resources
 ...o......
 ...ooo....
 ..........
