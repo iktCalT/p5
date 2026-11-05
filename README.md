@@ -2,12 +2,14 @@
 ## Changelog
 
 2026-11-04:
-- Initial release
-- Add resources flag to writeup
-2026-11-04:
-- Add part 2
+- Initial release.
+- Add resources flag to writeup.
+
+2026-11-05:
+- Add part 2.
 - Add note in part 2 about external crates.
 - Clarify requirement for larger groups.
+- Fix part 2 setup to actually work with an autograder.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -436,12 +438,12 @@ pub trait Bot {
 We will explain the fields to do with garbage in Part 3, feel free to ignore it
 for now.
 
-Now, add the following unit test to your `tests` directory where
+Now, add the following unit test to `tests.rs` in your `tests` directory where
 `SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
 ```rs
 use p5_tetris::bot::{BoardState, Bot, CellState, TetrominoType};
 
-type SinglePlayerBot = /* TODO: Replace this comment with your bot! */;
+pub type SinglePlayerBot = /* TODO: Replace this comment with your bot! */;
 
 #[test]
 fn create_bot_and_get_any_action_test() {
