@@ -7,6 +7,7 @@
 2026-11-04:
 - Add part 2
 - Add note in part 2 about external crates.
+- Clarify requirement for larger groups.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -42,7 +43,7 @@ and the most robust teams may receive a small amount of extra credit on this or
 next assignment. So, try to write efficient code whenever possible.
 
 ### Submission and Logistics
-You should *work in groups of 3-4*. Please form groups on gradescope and submit
+You must *work in groups of 3-4*. Please form groups on gradescope and submit
 together for both the checkpoint and final submission. You should have the same
 groups throughout this and next project as they will build on each other.
 
