@@ -532,6 +532,11 @@ of these boards can be scored (possibly doing this in parallel as well with a
 similar process to generating the board states) and the bot can choose the move
 prefixing the move sequence generating the board with the min cost.
 
+You may use external crates in your implementation, though their abstractions
+may not conform super well to the description above. One popular library for
+parallel programming in rust is [rayon](https://github.com/rayon-rs/rayon).
+Feel free to use or ignore it (or other) creates.
+
 ## Part 3
 Currently being worked on, should be out soon.
 
