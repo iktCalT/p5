@@ -461,7 +461,7 @@ For part 2, your bot must be able to clear 40 lines in a normal, single player
 Tetris board. We will test your bot using a simulator with no time limit per
 frame (unlike part 3!!!), however there will be a time limit on the total amount
 of time your bot can take to clear 40 lines. Bots based around tree search and
-which parallelize there search should have no issue being fast enough.
+which parallelize their search should have no issue being fast enough.
 
 The autograder will have a test for this, but we also recommend you write a unit
 test for this yourself so you don't have to submit to get a ballpark idea of how
@@ -471,12 +471,17 @@ to add code to keep track of the number lines cleared and to check if you bot
 topped out.
 
 ### Algorithm Advice
-You have a lot of freedom in how you approach making a bot, though most (good)
-bots you could imagine will likely be some variety of exponential tree search
-([something something Tetris is hard
-](https://people.csail.mit.edu/dln/papers/tetris/tetris.pdf)). These work by
-trying possible moves and assigning costs to those moves. Then the move with
-minimum cost is chosen.
+You have a lot of freedom in how you approach making a bot, though
+most (good) bots you could imagine will likely be some variety of
+exponential tree search ([something something Tetris is hard
+](https://people.csail.mit.edu/dln/papers/tetris/tetris.pdf)). These
+work by trying possible moves and assigning costs to those moves. Then
+the move with minimum cost is chosen.  If you have taken CS 3700, this
+may be a chance to dust off your knowledge of
+[alpha-beta pruning](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning)
+or [Monte Carlo Tree
+search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search); if
+not, this is a chance to learn something new!
 
 That is, given a board state, you will use your Tetris simulator to try every
 single move. This creates a bunch of new boards. You can then recurse, trying
