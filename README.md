@@ -6,6 +6,7 @@
 - Add resources flag to writeup
 2026-11-04:
 - Add part 2
+- Add note in part 2 about external crates.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
