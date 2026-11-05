@@ -4,6 +4,8 @@
 2026-11-04:
 - Initial release
 - Add resources flag to writeup
+2026-11-04:
+- Add part 2
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -390,10 +392,145 @@ the unit 1/G for gravity.
 - When locking a piece in place, remember to reset the counter tracking time
   since a piece has moved down a row due to gravity.
 
-## Other Parts
-Currently being worked on. Should be out very soon.
+## Part 2: Single Player Tetris Bot
+### Setup
+For this part, you will implement a bot to play single player Tetris. First,
+for grading reasons you should create the following enums, structs, and trait
+as follows to module `bot`:
+```rs
+pub enum TetrominoType {
+    I, J, L, O, S, Z, T
+}
 
-## Testing
+pub enum TetrisAction {
+    C, W, L, R, D, H, E
+}
+
+#[derive(Clone, Copy)]
+pub enum CellState {
+    Filled, Empty
+}
+
+pub struct BoardState {
+    pub tetromino_row: usize,
+    pub tetromino_col: usize,
+    pub tetromino_rotation: usize,
+    pub tetromino: TetrominoType,
+
+    pub board: [[CellState; 10]; 20],
+    pub garbage_lines: [Option<usize>; 20],
+    pub ticks_till_garbage: u64,
+}
+
+pub trait Bot {
+    /// Create a new bot.
+    fn new() -> Self;
+
+    /// Gets an action to perform based on the board state. This should be called
+    /// every frame.
+    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
+}
+```
+We will explain the fields to do with garbage in Part 3, feel free to ignore it
+for now.
+
+Now, add the following unit test to your `tests` directory where
+`SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
+```rs
+use p5_tetris::bot::{BoardState, Bot, CellState, TetrominoType};
+
+type SinglePlayerBot = /* TODO: Replace this comment with your bot! */;
+
+#[test]
+fn create_bot_and_get_any_action_test() {
+    let mut bot = SinglePlayerBot::new();
+    let _ = bot.get_move(&BoardState {
+        tetromino_row: 20,
+        tetromino_col: 4,
+        tetromino_rotation: 0,
+        tetromino: TetrominoType::J,
+        board: [[CellState::Empty; 10]; 20],
+        garbage_lines: [None; 20],
+        ticks_till_garbage: 0,
+    });
+}
+```
+
+### Requirements Part 2
+For part 2, your bot must be able to clear 40 lines in a normal, single player
+Tetris board. We will test your bot using a simulator with no time limit per
+frame (unlike part 3!!!), however there will be a time limit on the total amount
+of time your bot can take to clear 40 lines. Bots based around tree search and
+which parallelize there search should have no issue being fast enough.
+
+The autograder will have a test for this, but we also recommend you write a unit
+test for this yourself so you don't have to submit to get a ballpark idea of how
+fast/good your bot is. You can do this with similar code to your `main.rs` in
+part 1, but replacing reading from a file with calls to your bot. You may need
+to add code to keep track of the number lines cleared and to check if you bot
+topped out.
+
+### Algorithm Advice
+You have a lot of freedom in how you approach making a bot, though most (good)
+bots you could imagine will likely be some variety of exponential tree search
+([something something Tetris is hard
+](https://people.csail.mit.edu/dln/papers/tetris/tetris.pdf)). These work by
+trying possible moves and assigning costs to those moves. Then the move with
+minimum cost is chosen.
+
+That is, given a board state, you will use your Tetris simulator to try every
+single move. This creates a bunch of new boards. You can then recurse, trying
+every single move on each of these new boards, creating an n-ary tree of boards
+where n is the number of moves from a board.
+
+After doing this some number of times (that number left intentionally vague,
+but you could imagine it just being some constant depth for example), each leaf
+board can be scored by an objective function. Then the parent of a leaf board
+can be scored as the min cost of all its children. This process can be iterated
+eventually obtaining the cost for a the board resulting from a single move. The
+bot can then choose the move with the minimum cost.
+
+To be said is what the objective function should be. It should take some board
+state and grade it based on features we thing are good. There are a lot of
+things which could work and there isn't really a right answer here, but here are
+some ideas you can try:
+- Tetris boards want to have flat tops or only single wells. Add 1 cost for each
+  cell which would need to be filled in to make the top flat ignoring the single
+  deepest well.
+- Tetris boards want to be solid. Add a bunch of cost for each enclosed empty
+  cell.
+- Tetris bots should want to clear lines. Add cost proportional to the row of
+  the highest filled block.
+
+### Implementation Advice
+If you use a tree search, how fast it runs, and thus how far ahead you can
+search, depends a lot on three things:
+1. How well you parallelize work
+2. How fast your simulator is
+3. How fast your objective function is
+
+We've mentioned ways to speed up (2) and (3) in P2 and lecture, so we will focus
+on (1). Instead of implementing (1) as a naive recursive function, we could
+split the computation up over multiple threads. There would be a work queue,
+maybe represented by an mpsc channel.
+
+An item in the queue is a board state tagged with a command sequence. When an
+item is popped off the queue, a new thread be started to compute the board
+states possible after k additional moves (for some tunable constant k). New
+states, tagged with the move sequences resulting in those board states can be
+added back to the work queue.
+
+This process can continue until some stopping condition, like maybe all threads
+have finished and there is no board in the queue generated by a sequence of
+moves of length less than s (for another tunable constant s). At this point all
+of these boards can be scored (possibly doing this in parallel as well with a
+similar process to generating the board states) and the bot can choose the move
+prefixing the move sequence generating the board with the min cost.
+
+## Part 3
+Currently being worked on, should be out soon.
+
+## Integration Testing
 We use [runt](https://github.com/rachitnigam/runt) for integration tests. You
 can install it with `cargo install runt`. You can then run the integration
 tests by building with `cargo build --release` and running `runt cli-tests`.
@@ -413,7 +550,9 @@ Your document should include the following sections
 2. Implementation: Describe any interesting algorithms you use or otherwise
   creative or non-obvious implementation decisions. Explain where you expect
   there may be performance bottlenecks in your code and how you identified
-  these spots. In particular, what was your bot's algorithm?
+  these spots. In particular, what was your bot's algorithm? If you read
+  anything which inspired it, please cite it (just a link and brief description
+  of how you used the resource is fine).
 3. Testing: Describe how you tested your design and what parts of your project
   did you devote more or less verification effort towards.
   verification effort towards.
