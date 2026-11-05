@@ -404,13 +404,20 @@ pub enum TetrisAction {
     C, W, L, R, D, H, E
 }
 
+#[derive(Clone, Copy)]
+pub enum CellState {
+    Filled, Empty
+}
+
 pub struct BoardState {
     pub tetromino_row: usize,
     pub tetromino_col: usize,
     pub tetromino_rotation: usize,
     pub tetromino: TetrominoType,
 
+    pub board: [[CellState; 10]; 20],
     pub garbage_lines: [Option<usize>; 20],
+    pub ticks_till_garbage: u64,
 }
 
 pub trait Bot {
@@ -422,12 +429,13 @@ pub trait Bot {
     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
 }
 ```
-We will explain `garbage_lines` in Part 3, feel free to ignore it for now.
+We will explain the fields to do with garbage in Part 3, feel free to ignore it
+for now.
 
 Now, add the following unit test to your `tests` directory where
 `SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
 ```rs
-use p5_tetris::bot::{BoardState, Bot, TetrominoType};
+use p5_tetris::bot::{BoardState, Bot, CellState, TetrominoType};
 
 type SinglePlayerBot = /* Replace this todo with your single player bot! */;
 
@@ -439,7 +447,9 @@ fn create_bot_and_get_any_action_test() {
         tetromino_col: 4,
         tetromino_rotation: 0,
         tetromino: TetrominoType::J,
+        board: [[CellState::Empty; 10]; 20],
         garbage_lines: [None; 20],
+        ticks_till_garbage: 0,
     });
 }
 ```
