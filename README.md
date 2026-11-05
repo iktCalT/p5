@@ -425,7 +425,7 @@ pub trait Bot {
     fn new() -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
-    /// every frame. 
+    /// every frame.
     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
 }
 ```
