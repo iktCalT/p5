@@ -4,6 +4,8 @@
 2026-11-04:
 - Initial release
 - Add resources flag to writeup
+2026-11-04:
+- Add part 2
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -525,7 +527,10 @@ of these boards can be scored (possibly doing this in parallel as well with a
 similar process to generating the board states) and the bot can choose the move
 prefixing the move sequence generating the board with the min cost.
 
-## Testing
+## Part 3
+Currently being worked on, should be out soon.
+
+## Integration Testing
 We use [runt](https://github.com/rachitnigam/runt) for integration tests. You
 can install it with `cargo install runt`. You can then run the integration
 tests by building with `cargo build --release` and running `runt cli-tests`.
