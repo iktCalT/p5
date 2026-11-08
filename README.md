@@ -11,6 +11,11 @@
 - Clarify requirement for larger groups.
 - Fix part 2 setup to actually work with an autograder.
 
+2026-11-08:
+- Fix tests to match README and fix runt command to use p5_tetris as binary.
+- Fix mistake in README in hard drop section, if any cell is above row 20, top
+  out, not all
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
@@ -370,7 +375,7 @@ config file. This makes the block fall faster.
 
 A hard drop instantly moves a piece downwards until that piece cannot move down
 a row without one of its cells overlapping a fill cell or being below row 0. It
-then locks the piece in place. If all of the cells of th piece are above row
+then locks the piece in place. If any of the cells of the piece are above row
 20, stop reading inputs and stop updating game state. The player topped out!
 
 There is also a [wiki page on this](https://tetris.wiki/Drop) which is useful to
