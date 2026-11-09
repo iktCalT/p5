@@ -403,9 +403,9 @@ the unit 1/G for gravity.
   the game board, and game itself, which calls functions provided by the game
   board.
 - Implement board serialization as soon as possible. This will allow you to
-  test features as you implement them.
+  test features as you implement them with provided integration tests.
 - Implement input format parsing so you can do end to end testing as soon as
-  possible.
+  possible with provided integration tests.
 - Write unit or integration tests for your code as you implement new features.
 - When locking a piece in place, remember to reset the counter tracking time
   since a piece has moved down a row due to gravity.
@@ -414,7 +414,7 @@ the unit 1/G for gravity.
 ### Setup
 For this part, you will implement a bot to play single player Tetris. First,
 for grading reasons you should create the following enums, structs, and trait
-as follows to module `bot`:
+as follows to module `bot` in a file `src/bot.rs`:
 ```rs
 pub enum TetrominoType {
     I, J, L, O, S, Z, T
@@ -434,13 +434,10 @@ pub struct BoardState {
     pub tetromino_col: usize,
     pub tetromino_rotation: usize,
     pub tetromino: TetrominoType,
-
     pub board: [[CellState; 10]; 20],
-    pub garbage_lines: [Option<usize>; 20],
-    pub ticks_till_garbage: u64,
 }
 
-pub trait Bot {
+pub trait SinglePlayerBot {
     /// Create a new bot.
     fn new() -> Self;
 
@@ -457,19 +454,17 @@ Now, add the following unit test to `tests.rs` in your `tests` directory where
 ```rs
 use p5_tetris::bot::{BoardState, Bot, CellState, TetrominoType};
 
-pub type SinglePlayerBot = /* TODO: Replace this comment with your bot! */;
+pub type MySinglePlayerBot = /* TODO: Replace this comment with your bot! */;
 
 #[test]
 fn create_bot_and_get_any_action_test() {
-    let mut bot = SinglePlayerBot::new();
+    let mut bot = MySinglePlayerBot::new();
     let _ = bot.get_move(&BoardState {
         tetromino_row: 20,
         tetromino_col: 4,
         tetromino_rotation: 0,
         tetromino: TetrominoType::J,
         board: [[CellState::Empty; 10]; 20],
-        garbage_lines: [None; 20],
-        ticks_till_garbage: 0,
     });
 }
 ```
@@ -555,8 +550,181 @@ may not conform super well to the description above. One popular library for
 parallel programming in rust is [rayon](https://github.com/rayon-rs/rayon).
 Feel free to use or ignore it (or other) creates.
 
-## Part 3
-Currently being worked on, should be out soon.
+## Part 3: Multiplayer Tetris
+Tetris can be made multiplayer by giving each player their own board. Whenever
+a player clears multiple lines, one less than that number of lines is sent to
+the other player as garbage. In this part, you will first augment your simulator
+to handle multiple players and then use your simulator to have multiple bots
+compete with each other.
+
+You will add a new flag to your simulator called
+`--simulate-inputs-multi-player` which takes a list of input files and outputs
+the board of each player. As an example with both `p1-inputs.txt` and
+`p2-inputs.txt` identical, the command outputs the following:
+```
+$ cargo run -- --resources resources --simulate-inputs-multi-player p1-inputs.txt p2-inputs.txt
+...o......    ...o......
+...ooo....    ...ooo....
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+..........    ..........
+......o...    ......o...
+.....oo...    .....oo...
+o....oo.o.    o....oo.o.
+ooooooo.oo    ooooooo.oo
+oo...o..o.    oo...o..o.
+ooooooooo.    ooooooooo.
+ooooooooo.    ooooooooo.
+ooooooooo.    ooooooooo.
+ooooooooo.    ooooooooo.
+```
+### Input Format
+The input format is identical to Part 1.
+
+### Output Format
+The output format is very similar to Part 1. Each player's board is drawn side
+by side, deliminated by four spaces. Player 1, passed to the binary as the first
+input file is drawn first, then player 2 drawn second.
+
+### Multiplayer Tetris Behavior and Garbage
+The simulator now keeps track of two boards at the same time. Simulation per
+board progresses as in single player Tetris until a player clears one or
+multiple lines on a given tick. When this happens "garbage," a row with one cell
+omitted, is sent to the other player. If multiple lines of garbage are sent on
+the same tick, each row will have a cell in the same column removed.
+
+Sent garbage can "cancel out" pending garbage sent from the other player.
+Garbage not used to cancel other garbage is is added to a garbage queue and
+tagged with the amount of time until they are added to the other player's board.
+
+The sequence is as follows:
+1. A player clears n lines and has g rows of queued garbage on one tick
+2.
+  - On the next tick, the player other player's queue will have max(n - g, 0)
+    additional lines of garbage tagged with the integer "garbage_queue_time"
+    from the config, measured in ticks.
+  - The current player's queue will have min(g - n, g) fewer lines of garbage
+    and any garbage tagged with timer 1 in the last tick that was not removed
+    is now  added as a garbage row to the that player's board.
+  - If the number of lines of garbage causes a cell to end up above row 20, the
+    player tops out.
+
+Note: Removing garbage from the first player's queue happens before that garbage
+is converted to a row on that player's board.
+
+### Multiplayer Tetris Bots
+Multiplayer bots look similar to single player bots but take in the board state
+of both players as well as the garbage state of both players. Thus, they require
+a new interface. Add the following to your `bots` module (in `bot.rs`):
+```rs
+pub struct GarbageLine {
+    pub empty_col: usize,
+    pub ticks_till_applied: usize,
+}
+
+pub trait MultiPlayerBot {
+    /// Create a new bot.
+    fn new() -> Self;
+
+    /// Gets an action to perform based on the board state. This should be called
+    /// every frame.
+    fn get_move(&mut self, p1_state: &BoardState, p1_garbage: &[GarbageLine], p2_state: &BoardState, p2_garbage: &[GarbageLine]) -> TetrisAction;
+}
+```
+
+And to facilitate grading, add the following to `tests.rs`
+```rs
+pub type MyMultiPlayerBot = /* TODO: Replace this comment with your bot! */;
+
+#[test]
+fn create_mut_bot_and_get_any_action_test() {
+    let mut bot = MyMultiPlayerBot::new();
+    let state = &BoardState {
+        tetromino_row: 20,
+        tetromino_col: 4,
+        tetromino_rotation: 0,
+        tetromino: TetrominoType::J,
+        board: [[CellState::Empty; 10]; 20],
+    };
+    let _ = bot.get_move(&state, &[], &state, &[]);
+}
+```
+
+### Connecting Bots to the Server
+We now want you to create a harness to allow two bots to play each other. This
+involves adding the following flags to your binary:
+- `--list-bots`: print a newline separated list of implemented bots
+- `--trace-bot-run <bot1> <bot1-tracefile> <bot2> <bot2-tracefile>`: print the
+  board state after `<bot1>` or `<bot2>` tops out in the output format described
+  above. Write `<bot1>`'s inputs to `<bot1-tracefile>` in the input format
+  described above and write `<bot2>`'s inputs to `<bot2-tracefile>` in the input
+  format described above.
+
+As an example
+```
+$ cargo run -- --list-bots
+good-bot
+bad-bot
+$ cargo run -- --trace-bot-run good-bot t1.txt bad-bot t2.txt
+...o......    ...o......
+...ooo....    .ooooooo..
+..........    ...oooooo.
+..........    ....oo....
+..........    ....oo....
+..........    ....oo....
+..........    ...oo.....
+..........    ....oo....
+..........    ...oo.....
+..........    ...o......
+..........    ...ooo....
+..........    ....oo....
+..........    ...oo.....
+......o...    ...oo.....
+.....oo...    ...ooo....
+o....oo.o.    ...ooo....
+ooooooo.oo    ...oooo...
+oo...o..o.    ....oo....
+ooooooooo.    ....oo....
+ooooooooo.    ....oo....
+ooooooooo.    ...ooo....
+ooooooooo.    ...ooo....
+$ ls
+t1.txt t2.txt
+$ cat t2.txt
+HHHHHHHHHHHHLLHRRRH
+```
+
+You should implement at least two bots, one named `good-bot` which should
+hopefully play pretty well and one named `bad-bot` which can play however bad
+you want. `good-bot` should be able to reliably beat `bad-bot`.
+
+You can run a sanity check for implementing the harness correctly by simulating
+an run using the created traces using `--simulate-inputs-multi-player` and
+verifying the final board states are the same.
+
+### Requirements for Part 3
+We will test Part 3 as follows:
+1. Verifying `--simulate-inputs-multi-player` agrees with our staff solution on
+  various input traces
+2. Running your harness pitting `good-bot` against `bad-bot` and verifying your
+  program generates a valid trace and `good-bot` wins.
+3. Running the bot you assign to `MyMultiPlayerBot` and verifying it returns a
+  move in less than 1/60th of a second on the google cloud servers (e.g. it
+  returns a move every frame).
+
+The 1/60th of a second time limit creates a tradeoff. You don't have to make a
+meaningful move every frame (e.g. you can return E), so bots which "think" in a
+separate thread for multiple frames to find better moves may do better than bots
+which choose poor moves quickly, though bots which move quickly can overwhelm
+bots which are too slow.
 
 ## Integration Testing
 We use [runt](https://github.com/rachitnigam/runt) for integration tests. You
