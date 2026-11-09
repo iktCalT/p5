@@ -11,6 +11,10 @@
 - Clarify requirement for larger groups.
 - Fix part 2 setup to actually work with an autograder.
 
+2026-11-09
+- Fix error in writeup, blocks should fall when greater than or equal to lock
+  delay or gravity, not when greater than.
+
 2026-11-08:
 - Fix tests to match README and fix runt command to use p5_tetris as binary.
 - Fix mistake in README in hard drop section, if any cell is above row 20, top
@@ -286,11 +290,11 @@ On each frame, the game will:
 2. Perform an action based on the read input.
 3. Increment the number of frames since a piece has forcefully moved down a
   row.
-  - If this number if greater than the gravity and the piece can be moved down
-    a row, move the piece down a row.
-  - If this number is greater than the pieces *lock delay*, the number of
-    frames before a piece locks into place, fill the cells currently taken up
-    by the piece.
+  - If this number if greater than or equal to the gravity and the piece can be
+    moved down a row, move the piece down a row.
+  - If this number is greater than or equal to the pieces *lock delay*, the
+    number of frames before a piece locks into place, fill the cells currently
+    taken up by the piece.
   - If any cell of this piece are above row 20, stop reading inputs and
     advancing the game state. The player "topped out" and lost.
 4. If any rows are composed entirely of filled with cells, remove the row and
