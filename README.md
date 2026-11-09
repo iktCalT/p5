@@ -446,8 +446,6 @@ pub trait SinglePlayerBot {
     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
 }
 ```
-We will explain the fields to do with garbage in Part 3, feel free to ignore it
-for now.
 
 Now, add the following unit test to `tests.rs` in your `tests` directory where
 `SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
@@ -619,6 +617,12 @@ The sequence is as follows:
 
 Note: Removing garbage from the first player's queue happens before that garbage
 is converted to a row on that player's board.
+
+In order for you solution to match with the staff solution and pasts tests you
+must use a `Xoshiro128PlusPlus` per game board, using one call to `.next_u32()`
+for an aligned block of garbage and only calling calling to the randomizer when
+block are actually sent to the other player. The randomizers should be seeded
+with the random seed from `config.json`.
 
 ### Multiplayer Tetris Bots
 Multiplayer bots look similar to single player bots but take in the board state
