@@ -11,7 +11,6 @@
 - Clarify requirement for larger groups.
 - Fix part 2 setup to actually work with an autograder.
 
-
 2026-11-08:
 - Fix tests to match README and fix runt command to use p5_tetris as binary.
 - Fix mistake in README in hard drop section, if any cell is above row 20, top
@@ -21,6 +20,8 @@
 - Fix error in writeup, blocks should fall when greater than or equal to lock
   delay or gravity, not when greater than.
 - Change required groups to strongly encouraged groups.
+- Specify more precise requirements for bag randomizer so it actually matches
+  the staff solution's randomizer.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -213,11 +214,12 @@ randomly without replacement. When the bag is empty, those 7 pieces are placed
 back into the bag and drawing continues.
 
 When implementing your randomizer, you *must use the
-[rand](https://docs.rs/rand/latest/rand/) and
-[rand_xoshiro](https://docs.rs/rand_xoshiro/latest/rand_xoshiro/) crates with
-the random seed from `config.json` and the `Xoshiro128PlusPlus` algorithm.*
-We provide an implementation matching the staff solution below. Please use it
-to be sure you pass tests:
+[rand](https://docs.rs/rand/latest/rand/) version 0.10.3 and
+[rand_xoshiro](https://docs.rs/rand_xoshiro/latest/rand_xoshiro/) version 0.8.1
+crates with the random seed from `config.json` and the `Xoshiro128PlusPlus`
+algorithm.* We provide an implementation matching the staff solution below.
+When creating the bag randomizer, pass an iterator ordering the tetrominoes i,
+j, l, o, s, t, z, the same they appear in the JSON:
 ```rs
 type RngAlgorithm = Xoshiro128PlusPlus;
 
