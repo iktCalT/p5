@@ -11,14 +11,16 @@
 - Clarify requirement for larger groups.
 - Fix part 2 setup to actually work with an autograder.
 
-2026-11-09
-- Fix error in writeup, blocks should fall when greater than or equal to lock
-  delay or gravity, not when greater than.
 
 2026-11-08:
 - Fix tests to match README and fix runt command to use p5_tetris as binary.
 - Fix mistake in README in hard drop section, if any cell is above row 20, top
   out, not all
+
+2026-11-09
+- Fix error in writeup, blocks should fall when greater than or equal to lock
+  delay or gravity, not when greater than.
+- Change required groups to strongly encouraged groups.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -54,9 +56,10 @@ and the most robust teams may receive a small amount of extra credit on this or
 next assignment. So, try to write efficient code whenever possible.
 
 ### Submission and Logistics
-You must *work in groups of 3-4*. Please form groups on gradescope and submit
-together for both the checkpoint and final submission. You should have the same
-groups throughout this and next project as they will build on each other.
+We strongly encourage you to *work in groups of 3-4*. Please form groups on
+gradescope and submit together for both the checkpoint and final submission. You
+should have the same groups throughout this and next project as they will build
+on each other.
 
 You will submit your project using `cargo package` as previously. Your project
 when built should create a binary. We will specify the behavior of that binary
