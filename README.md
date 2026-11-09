@@ -636,7 +636,13 @@ pub trait MultiPlayerBot {
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(&mut self, p1_state: &BoardState, p1_garbage: &[GarbageLine], p2_state: &BoardState, p2_garbage: &[GarbageLine]) -> TetrisAction;
+    fn get_move(
+        &mut self,
+        p1_state: &BoardState,
+        p1_garbage: &[GarbageLine],
+        p2_state: &BoardState,
+        p2_garbage: &[GarbageLine],
+    ) -> TetrisAction;
 }
 ```
 
