@@ -590,7 +590,8 @@ The input format is identical to Part 1.
 ### Output Format
 The output format is very similar to Part 1. Each player's board is drawn side
 by side, deliminated by four spaces. Player 1, passed to the binary as the first
-input file is drawn first, then player 2 drawn second.
+input file is drawn first, then player 2 drawn second. Board should be truncated
+to 22 lines if garbage were to make them taller (see next section).
 
 ### Multiplayer Tetris Behavior and Garbage
 The simulator now keeps track of two boards at the same time. Simulation per
@@ -603,26 +604,35 @@ Sent garbage can "cancel out" pending garbage sent from the other player.
 Garbage not used to cancel other garbage is is added to a garbage queue and
 tagged with the amount of time until they are added to the other player's board.
 
-The sequence is as follows:
-1. A player clears n lines and has g rows of queued garbage on one tick
-2.
-  - On the next tick, the player other player's queue will have max(n - g, 0)
-    additional lines of garbage tagged with the integer "garbage_queue_time"
-    from the config, measured in ticks.
-  - The current player's queue will have min(g - n, g) fewer lines of garbage
-    and any garbage tagged with timer 1 in the last tick that was not removed
-    is now  added as a garbage row to the that player's board.
-  - If the number of lines of garbage causes a cell to end up above row 20, the
-    player tops out.
+The sequence occurs after a game tick and is as follows:
+1. Say player 1 has g1 lines of garbage in their queue, and player 2 has g2
+  lines of garbage in their queue.
+2. Additionally, say player 1 clears l1 lines and player 2 clears l2 lines.
+3. Let s1 = max(l1 - 1, 0), s2 = max(l2 - 1, 0)
+4. Player 2's queue gets max(s1 - g1, 0) new pieces of garbage tagged with timer
+  "garbage_queue_time" from `config.json` and the oldest min(s1, g1) pieces of
+  pending garbage, not including newly added garbage this tick, is removed.
+5. Player 1's queue gets max(s2 - g1, 0) new pieces of garbage tagged with timer
+  "garbage_queue_time" from `config.json` and the oldest min(s2, g2) pieces of
+  pending garbage, not including the newly added garbage this tick, is removed.
+6. All garbage in each player's queue tagged with timer equal to 0 has that
+  garbage removed from the queue and applied to the bottom that player's board,
+  moving all other rows upwards.
+7. For a player, if any cell is above at or above the 20th row (row index >=
+  20), that player tops out. No further garbage should be applied to topped out
+  players.
+8. All garbage timers are reduced by 1.
 
-Note: Removing garbage from the first player's queue happens before that garbage
-is converted to a row on that player's board.
+Note: when representing garbage, we can omit the actual missing column when
+storing garbage, instead computing it on the fly when it is applied to the game
+board.
 
 In order for you solution to match with the staff solution and pasts tests you
 must use a `Xoshiro128PlusPlus` per game board, using one call to `.next_u32()`
 for an aligned block of garbage and only calling calling to the randomizer when
-block are actually sent to the other player. The randomizers should be seeded
-with the random seed from `config.json`.
+"on the fly" when garbage is actually added to the game board, once per block of
+aligned garbage. The randomizers should be seeded with the random seed from
+`config.json`.
 
 ### Multiplayer Tetris Bots
 Multiplayer bots look similar to single player bots but take in the board state
@@ -630,7 +640,7 @@ of both players as well as the garbage state of both players. Thus, they require
 a new interface. Add the following to your `bots` module (in `bot.rs`):
 ```rs
 pub struct GarbageLine {
-    pub empty_col: usize,
+    pub num_rows_to_create: usize,
     pub ticks_till_applied: usize,
 }
 
