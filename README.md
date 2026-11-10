@@ -27,7 +27,7 @@
 
 2026-11-09
 - Fix incorrect test, topped-out.txt. The staff solution continued to draw
-  new pieces to the bored despite the user topping out.
+  new pieces to the board despite the user topping out.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
