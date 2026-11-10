@@ -662,6 +662,8 @@ pub trait MultiPlayerBot {
 
 And to facilitate grading, add the following to `tests.rs`
 ```rs
+use p5_tetris::bot::MultiPlayerBot;
+
 pub type MyMultiPlayerBot = /* TODO: Replace this comment with your bot! */;
 
 #[test]
