@@ -22,6 +22,8 @@
 - Change required groups to strongly encouraged groups.
 - Specify more precise requirements for bag randomizer so it actually matches
   the staff solution's randomizer.
+- Fix T piece being a Z piece
+- Add part 3 writeup
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
