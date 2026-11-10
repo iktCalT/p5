@@ -25,9 +25,10 @@
 - Fix T piece being a Z piece
 - Add part 3 writeup
 
-2026-11-09
+2026-11-10
 - Fix incorrect test, topped-out.txt. The staff solution continued to draw
   new pieces to the board despite the user topping out.
+- Clean up design doc section formatting.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -768,27 +769,30 @@ lines), Markdown, or PDF file. You should list the name and netids of all
 students who contributed to your project on this document.
 
 Your document should include the following sections
-1. Architecture: Describe the modules you wrote and any important structs or
-  traits. Describe how they interact and any invariants you maintain between
-  them.
-2. Implementation: Describe any interesting algorithms you use or otherwise
-  creative or non-obvious implementation decisions. Explain where you expect
-  there may be performance bottlenecks in your code and how you identified
-  these spots. In particular, what was your bot's algorithm? If you read
-  anything which inspired it, please cite it (just a link and brief description
-  of how you used the resource is fine).
-3. Testing: Describe how you tested your design and what parts of your project
-  did you devote more or less verification effort towards.
-  verification effort towards.
+1. Architecture:
+  - Describe the modules you wrote and any important structs or traits.
+  - Describe how they interact and any invariants you maintain between them.
+2. Implementation:
+  - Describe any interesting algorithms you use or otherwise creative or
+    non-obvious implementation decisions.
+  - Explain where your code has performance bottlenecks and how you identified them.
+    Profile your code to support your argument.
+  - What was your bot's algorithm? If you read anything which inspired it,
+    please cite it (just a link and brief description of what you used from the
+    resource is fine).
+3. Testing:
+  - Describe how you tested your design.
+  - What parts of your project did you devote more or less verification effort
+    towards?
 4. Work Credit: If you worked in a group, say who did what.
 5. Known Issues: If there is something you know doesn't work, describe it here.
-6. AI Usage: If you used any AI tools describe how you used them. We are
-  curious how you use the tools, especially given the limiting AI policy.
+6. AI Usage: If you used any AI tools describe how you used them. We are curious
+  how you use the tools, especially given the limiting AI policy.
 7. Meta Comments: Write any opinions on the assignment. Some things we are
   curious about are:
-  - how long did you spend on the assignment, which parts took the longest?
-  - what did you like and dislike about the assignment, why?
-  - is there anything you'd like to change about the assignment?
+  - How long did you spend on the assignment, which parts took the longest?
+  - What did you like and dislike about the assignment, why?
+  - Is there anything you'd like to change about the assignment?
 
 Acknowledgement: The requirements for this document are loosely based off of the
 requirements for the design document required by CS 4120's assignments.
