@@ -25,6 +25,10 @@
 - Fix T piece being a Z piece
 - Add part 3 writeup
 
+2026-11-09
+- Fix incorrect test, topped-out.txt. The staff solution continued to draw
+  new pieces to the bored despite the user topping out.
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
