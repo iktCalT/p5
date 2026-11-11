@@ -21,11 +21,27 @@ impl Board {
         }
     }
 
+    fn get(&self, position: Position) -> Option<&u8> {
+        let Some(row) = self.grid.get(position.0 as usize) else {
+            return None;
+        };
+        row.get(position.1 as usize)
+    }
+
     fn get_mut(&mut self, position: Position) -> Option<&mut u8> {
         let Some(row) = self.grid.get_mut(position.0 as usize) else {
             return None;
         };
         row.get_mut(position.1 as usize)
+    }
+
+    /// return true if it is a empty position
+    /// return false if it is non-empty or the position doesn't exist
+    pub fn is_empty(&self, position: Position) -> bool {
+        let Some(pos) = self.get(position) else {
+            return false;
+        };
+        *pos == b'.'
     }
 
     pub fn insert(&mut self, position: Position) -> Result<(), ManagerError> {

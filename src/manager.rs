@@ -3,6 +3,7 @@ use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, Tetrom
 
 use crate::bag_randomizer::BagRandomizer;
 
+#[derive(Debug)]
 pub enum ManagerError {
     PositionNotOnBoard,
     InsertIntoOccupiedPosition,
@@ -41,7 +42,13 @@ impl GameManager {
 
     // Check if next state valid
     fn is_valid_state(&self, new_state: TetrominoState, offset: Position) -> bool {
-        todo!()
+        let new_position = self.curr_pos + offset;
+        for point in new_state.0 {
+            if !self.board.is_empty(offset + point) {
+                return false;
+            }
+        }
+        true
     }
 
     /// return Some(true) if move successfully
@@ -57,7 +64,8 @@ impl GameManager {
                         continue;
                     };
                     if self.is_valid_state(new_state, offset) {
-                        self.curr_tetromino.rotate(action);
+                        self.curr_tetromino.rotate(action).unwrap();
+                        self.curr_pos += offset;
                         return Some(true);
                     }
                 }
@@ -71,7 +79,8 @@ impl GameManager {
                         continue;
                     };
                     if self.is_valid_state(new_state, offset) {
-                        self.curr_tetromino.rotate(action);
+                        self.curr_tetromino.rotate(action).unwrap();
+                        self.curr_pos += offset;
                         return Some(true);
                     }
                 }
@@ -79,13 +88,10 @@ impl GameManager {
             },
             TetrisAction::D => {
                 let offsets = vec![Position(0, -1)];
-                
+
                 for offset in offsets {
-                    let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
-                        continue;
-                    };
-                    if self.is_valid_state(new_state, offset) {
-                        self.curr_tetromino.rotate(action);
+                    if self.is_valid_state(self.curr_tetromino.state.clone(), offset) {
+                        self.curr_pos += offset;
                         return Some(true);
                     }
                 }

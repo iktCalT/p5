@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign};
+
 use crate::manager::ManagerError;
 
 #[derive(Debug, Clone, Copy)]
@@ -72,16 +74,32 @@ pub enum WallKick {
     Normal, I, O
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Position(pub isize, pub isize);
 
+impl Add<Self> for Position {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Position(
+            self.0 + rhs.0,
+            self.1 + rhs.1
+        )
+    }
+}
+
+impl AddAssign for Position {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+        self.1 += rhs.1;
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct TetrominoState(Vec<Position>);
+pub struct TetrominoState(pub Vec<Position>);
 
 pub struct Tetromino {
     pub ttype: TetrominoType,
-    state: TetrominoState,
-    offset: Position,
+    pub state: TetrominoState,
     pub rotation: Rotation,
 }
 
@@ -141,12 +159,10 @@ impl Tetromino {
         // };
 
         let state = TetrominoType::states(ttype)[0].clone();
-        let offset = TetrominoType::offsets(ttype, Rotation::Origin)[0].clone();
 
         Self {
             ttype, 
             state,
-            offset,
             rotation: Rotation::Origin
         }
     }
