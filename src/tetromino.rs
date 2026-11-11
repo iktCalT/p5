@@ -5,6 +5,26 @@ pub enum TetrominoType {
     I, J, L, O, S, Z, T
 }
 
+impl TetrominoType {
+    fn states(ttype: TetrominoType) -> [TetrominoState; 4] {
+        match ttype {
+            TetrominoType::I => todo!(),
+            TetrominoType::J => todo!(),
+            TetrominoType::L => todo!(),
+            _ => todo!()
+        }
+    }
+
+    pub fn state(ttype: TetrominoType, rotation: Rotation) -> TetrominoState {
+        todo!()
+    }
+
+    pub fn offsets(ttype: TetrominoType, rotation: Rotation) -> Vec<Position> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum TetrisAction {
     /// Rotate 90 degrees clockwise
     C, 
@@ -59,81 +79,84 @@ pub struct Position(pub isize, pub isize);
 pub struct TetrominoState(Vec<Position>);
 
 pub struct Tetromino {
-    ttype: TetrominoType,
-    states: Vec<TetrominoState>,
-    wall_kick: WallKick,
-    rotation: Rotation,
+    pub ttype: TetrominoType,
+    state: TetrominoState,
+    offset: Position,
+    pub rotation: Rotation,
 }
 
 impl Tetromino {
     pub fn new(ttype: TetrominoType) -> Self {
-        let to_states = |states: [[[isize; 2]; 4]; 4]| {
-            states.iter()
-                .map(|state| TetrominoState(state.iter()
-                    .map(|position| Position(position[0], position[1]))
-                    .collect()))
-                .collect::<Vec<TetrominoState>>()
-        };
+        // let to_states = |states: [[[isize; 2]; 4]; 4]| {
+        //     states.iter()
+        //         .map(|state| TetrominoState(state.iter()
+        //             .map(|position| Position(position[0], position[1]))
+        //             .collect()))
+        //         .collect::<Vec<TetrominoState>>()
+        // };
 
-        let (states, wall_kick) = match ttype {
-            TetrominoType::I => (to_states([
-                [[-1,  0], [ 0,  0], [ 1,  0], [ 2,  0]],
-                [[ 1,  1], [ 1,  0], [ 1, -1], [ 1, -2]],
-                [[-1, -1], [ 0, -1], [ 1, -1], [ 2, -1]],
-                [[ 0,  1], [ 0,  0], [ 0, -1], [ 0, -2]],
-            ]), WallKick::I),
-            TetrominoType::J => (to_states([
-                [[-1,  1], [-1,  0], [ 0,  0], [ 1,  0]],
-                [[ 0,  1], [ 1,  1], [ 0,  0], [ 0, -1]],
-                [[-1,  0], [ 0,  0], [ 1,  0], [ 1, -1]],
-                [[ 0,  1], [ 0,  0], [ 0, -1], [-1, -1]],
-            ]), WallKick::Normal),
-            TetrominoType::L => (to_states([
-                [[-1,  0], [ 0,  0], [ 1,  0], [ 1,  1]],
-                [[ 0,  1], [ 0,  0], [ 0, -1], [ 1, -1]],
-                [[-1, -1], [-1,  0], [ 0,  0], [ 1,  0]],
-                [[-1,  1], [ 0,  1], [ 0,  0], [ 0, -1]],
-            ]), WallKick::Normal),
-            TetrominoType::O => (to_states([
-                [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
-                [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
-                [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
-                [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
-            ]), WallKick::O),
-            TetrominoType::S => (to_states([
-                [[-1,  0], [ 0,  0], [ 0,  1], [ 1,  1]],
-                [[ 0,  1], [ 0,  0], [ 1,  0], [ 1, -1]],
-                [[-1, -1], [ 0, -1], [ 0,  0], [ 1,  0]],
-                [[-1,  1], [-1,  0], [ 0,  0], [ 0, -1]],
-            ]), WallKick::Normal),
-            TetrominoType::Z => (to_states([
-                [[-1,  1], [ 0,  1], [ 0,  0], [ 1,  0]],
-                [[ 1,  1], [ 0,  0], [ 1,  0], [ 0, -1]],
-                [[-1,  0], [ 0,  0], [ 0, -1], [ 1, -1]],
-                [[ 0,  1], [-1,  0], [ 0,  0], [-1, -1]],
-            ]), WallKick::Normal),
-            TetrominoType::T => (to_states([
-                [[-1,  0], [ 0,  0], [ 1,  0], [ 0,  1]],
-                [[ 0,  1], [ 0,  0], [ 1,  0], [ 0, -1]],
-                [[-1,  0], [ 0,  0], [ 1,  0], [ 0, -1]],
-                [[ 0,  1], [-1,  0], [ 0,  0], [ 0, -1]],
-            ]), WallKick::Normal),
-        };
+        // let (states, wall_kick) = match ttype {
+        //     TetrominoType::I => (to_states([
+        //         [[-1,  0], [ 0,  0], [ 1,  0], [ 2,  0]],
+        //         [[ 1,  1], [ 1,  0], [ 1, -1], [ 1, -2]],
+        //         [[-1, -1], [ 0, -1], [ 1, -1], [ 2, -1]],
+        //         [[ 0,  1], [ 0,  0], [ 0, -1], [ 0, -2]],
+        //     ]), WallKick::I),
+        //     TetrominoType::J => (to_states([
+        //         [[-1,  1], [-1,  0], [ 0,  0], [ 1,  0]],
+        //         [[ 0,  1], [ 1,  1], [ 0,  0], [ 0, -1]],
+        //         [[-1,  0], [ 0,  0], [ 1,  0], [ 1, -1]],
+        //         [[ 0,  1], [ 0,  0], [ 0, -1], [-1, -1]],
+        //     ]), WallKick::Normal),
+        //     TetrominoType::L => (to_states([
+        //         [[-1,  0], [ 0,  0], [ 1,  0], [ 1,  1]],
+        //         [[ 0,  1], [ 0,  0], [ 0, -1], [ 1, -1]],
+        //         [[-1, -1], [-1,  0], [ 0,  0], [ 1,  0]],
+        //         [[-1,  1], [ 0,  1], [ 0,  0], [ 0, -1]],
+        //     ]), WallKick::Normal),
+        //     TetrominoType::O => (to_states([
+        //         [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
+        //         [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
+        //         [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
+        //         [[ 0,  1], [ 1,  1], [ 0,  0], [ 1,  0]],
+        //     ]), WallKick::O),
+        //     TetrominoType::S => (to_states([
+        //         [[-1,  0], [ 0,  0], [ 0,  1], [ 1,  1]],
+        //         [[ 0,  1], [ 0,  0], [ 1,  0], [ 1, -1]],
+        //         [[-1, -1], [ 0, -1], [ 0,  0], [ 1,  0]],
+        //         [[-1,  1], [-1,  0], [ 0,  0], [ 0, -1]],
+        //     ]), WallKick::Normal),
+        //     TetrominoType::Z => (to_states([
+        //         [[-1,  1], [ 0,  1], [ 0,  0], [ 1,  0]],
+        //         [[ 1,  1], [ 0,  0], [ 1,  0], [ 0, -1]],
+        //         [[-1,  0], [ 0,  0], [ 0, -1], [ 1, -1]],
+        //         [[ 0,  1], [-1,  0], [ 0,  0], [-1, -1]],
+        //     ]), WallKick::Normal),
+        //     TetrominoType::T => (to_states([
+        //         [[-1,  0], [ 0,  0], [ 1,  0], [ 0,  1]],
+        //         [[ 0,  1], [ 0,  0], [ 1,  0], [ 0, -1]],
+        //         [[-1,  0], [ 0,  0], [ 1,  0], [ 0, -1]],
+        //         [[ 0,  1], [-1,  0], [ 0,  0], [ 0, -1]],
+        //     ]), WallKick::Normal),
+        // };
 
-        Self { 
+        let state = TetrominoType::states(ttype)[0].clone();
+        let offset = TetrominoType::offsets(ttype, Rotation::Origin)[0].clone();
+
+        Self {
             ttype, 
-            states,
-            wall_kick,
+            state,
+            offset,
             rotation: Rotation::Origin
         }
     }
 
-    /// Try to do a movement, but don't change the real state of tetromino
-    pub fn peek_state(&self, action: TetrisAction) -> Result<TetrominoState, ManagerError> {
+    /// Try to rotate, but don't change the actual states
+    pub fn peek_rotate(&self, action: TetrisAction) -> Result<TetrominoState, ManagerError> {
         match action {
-            TetrisAction::C => Ok(self.states[self.rotation.clockwise() as usize].clone()),
-            TetrisAction::W => Ok(self.states[self.rotation.counter_clockwise() as usize].clone()),
-            _ => todo!()
+            TetrisAction::C => Ok(TetrominoType::state(self.ttype, self.rotation.clockwise())),
+            TetrisAction::W => Ok(TetrominoType::state(self.ttype, self.rotation.counter_clockwise())),
+            _ => Err(ManagerError::ActionError)
         }
     }
 

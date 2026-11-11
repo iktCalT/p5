@@ -1,5 +1,5 @@
 use crate::board::Board;
-use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoType};
+use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
 use crate::bag_randomizer::BagRandomizer;
 
@@ -39,26 +39,59 @@ impl GameManager {
         }
     }
 
-    // Check if current tetromino on valid state
-    fn is_valid_state(&self) -> bool {
-
+    // Check if next state valid
+    fn is_valid_state(&self, new_state: TetrominoState, offset: Position) -> bool {
+        todo!()
     }
 
-    pub fn movement(&self, action: TetrisAction) {
+    /// return Some(true) if move successfully
+    /// return Some(false) if cannot move
+    /// return None if reaches bottom
+    pub fn movement(&mut self, action: TetrisAction) -> Option<bool> {
         match action {
             TetrisAction::C => {
-                self.curr_tetromino.rotate(action);
-                if !self.is_valid_state() {
-                    self.curr_tetromino.rotate(TetrisAction::W);
+                let offsets = TetrominoType::offsets(self.curr_tetromino.ttype, self.curr_tetromino.rotation.clockwise());
+
+                for offset in offsets {
+                    let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
+                        continue;
+                    };
+                    if self.is_valid_state(new_state, offset) {
+                        self.curr_tetromino.rotate(action);
+                        return Some(true);
+                    }
                 }
+                Some(false)
             },
             TetrisAction::W => {
-                self.curr_tetromino.rotate(action);
-                if !self.is_valid_state() {
-                    self.curr_tetromino.rotate(TetrisAction::C);
+                let offsets = TetrominoType::offsets(self.curr_tetromino.ttype, self.curr_tetromino.rotation.counter_clockwise());
+
+                for offset in offsets {
+                    let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
+                        continue;
+                    };
+                    if self.is_valid_state(new_state, offset) {
+                        self.curr_tetromino.rotate(action);
+                        return Some(true);
+                    }
                 }
+                Some(false)
             },
-            Te
+            TetrisAction::D => {
+                let offsets = vec![Position(0, -1)];
+                
+                for offset in offsets {
+                    let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
+                        continue;
+                    };
+                    if self.is_valid_state(new_state, offset) {
+                        self.curr_tetromino.rotate(action);
+                        return Some(true);
+                    }
+                }
+                Some(false)
+            },
+            _ => todo!()
         }
     }
 }
