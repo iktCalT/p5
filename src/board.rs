@@ -6,7 +6,6 @@ pub struct Board {
     grid: Vec<Vec<u8>>,
 }
 
-
 impl Board {
     pub fn new(width: usize, height: usize) -> Self {
         Self {

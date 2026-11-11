@@ -1,34 +1,78 @@
+use crate::manager::ManagerError;
+
 #[derive(Debug, Clone, Copy)]
 pub enum TetrominoType {
     I, J, L, O, S, Z, T
 }
 
 pub enum TetrisAction {
-    C, W, L, R, D, H, E
+    /// Rotate 90 degrees clockwise
+    C, 
+    /// Rotate 90 degrees counter-clockwise
+    W, 
+    /// Move piece left
+    L, 
+    /// Move piece right
+    R, 
+    /// Move piece down
+    D, 
+    /// Hard drop piece
+    H, 
+    /// No action
+    E, 
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum Rotation {
-    Origin, Right, Inverse, Left
+    Origin=0, Right, Inverse, Left
+}
+
+impl Rotation {
+    pub fn clockwise(&self) -> Rotation {
+        match self {
+            Rotation::Origin => Rotation::Right,
+            Rotation::Right => Rotation::Inverse,
+            Rotation::Inverse => Rotation::Left,
+            Rotation::Left => Rotation::Origin
+        }
+    }
+
+    pub fn counter_clockwise(&self) -> Rotation {
+        match self {
+            Rotation::Origin => Rotation::Left,
+            Rotation::Right => Rotation::Origin,
+            Rotation::Inverse => Rotation::Right,
+            Rotation::Left => Rotation::Inverse
+        }
+    }
 }
 
 pub enum WallKick {
     Normal, I, O
 }
 
+#[derive(Debug, Clone)]
 pub struct Position(pub isize, pub isize);
+
+#[derive(Debug, Clone)]
+pub struct TetrominoState(Vec<Position>);
+
 pub struct Tetromino {
     ttype: TetrominoType,
-    states: Vec<Vec<Position>>,
+    states: Vec<TetrominoState>,
     wall_kick: WallKick,
     rotation: Rotation,
 }
 
-
 impl Tetromino {
     pub fn new(ttype: TetrominoType) -> Self {
-        let to_states = |s: [[[isize;2];4];4]| {
-            s.iter().map(|a| 
-                a.iter().map(|b| Position(b[0], b[1])).collect()).collect::<Vec<Vec<Position>>>()
+        let to_states = |states: [[[isize; 2]; 4]; 4]| {
+            states.iter()
+                .map(|state| TetrominoState(state.iter()
+                    .map(|position| Position(position[0], position[1]))
+                    .collect()))
+                .collect::<Vec<TetrominoState>>()
         };
 
         let (states, wall_kick) = match ttype {
@@ -84,8 +128,22 @@ impl Tetromino {
         }
     }
 
+    /// Try to do a movement, but don't change the real state of tetromino
+    pub fn peek_state(&self, action: TetrisAction) -> Result<TetrominoState, ManagerError> {
+        match action {
+            TetrisAction::C => Ok(self.states[self.rotation.clockwise() as usize].clone()),
+            TetrisAction::W => Ok(self.states[self.rotation.counter_clockwise() as usize].clone()),
+            _ => todo!()
+        }
+    }
 
-    fn rotate(&self, action: TetrisAction) {
-        
+    pub fn rotate(&mut self, action: TetrisAction) -> Result<(), ManagerError> {
+        match action {
+            TetrisAction::C => self.rotation = self.rotation.clockwise(),
+            TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
+            TetrisAction::L | TetrisAction::R | TetrisAction::D | 
+            TetrisAction::H | TetrisAction::E => return Err(ManagerError::ActionError)
+        };
+        Ok(())
     }
 }

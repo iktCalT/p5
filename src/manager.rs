@@ -6,7 +6,8 @@ use crate::bag_randomizer::BagRandomizer;
 pub enum ManagerError {
     PositionNotOnBoard,
     InsertIntoOccupiedPosition,
-    RemoveFromEmptyPosition
+    RemoveFromEmptyPosition,
+    ActionError
 }
 
 struct GameManager {
@@ -38,8 +39,27 @@ impl GameManager {
         }
     }
 
-    pub fn movement(&self, action: TetrisAction) {
+    // Check if current tetromino on valid state
+    fn is_valid_state(&self) -> bool {
 
+    }
+
+    pub fn movement(&self, action: TetrisAction) {
+        match action {
+            TetrisAction::C => {
+                self.curr_tetromino.rotate(action);
+                if !self.is_valid_state() {
+                    self.curr_tetromino.rotate(TetrisAction::W);
+                }
+            },
+            TetrisAction::W => {
+                self.curr_tetromino.rotate(action);
+                if !self.is_valid_state() {
+                    self.curr_tetromino.rotate(TetrisAction::C);
+                }
+            },
+            Te
+        }
     }
 }
 
