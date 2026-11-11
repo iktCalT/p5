@@ -41,10 +41,10 @@ impl GameManager {
     }
 
     // Check if next state valid
-    fn is_valid_state(&self, new_state: TetrominoState, offset: Position) -> bool {
+    fn is_valid_state(&self, new_state: &TetrominoState, offset: Position) -> bool {
         let new_position = self.curr_pos + offset;
-        for point in new_state.0 {
-            if !self.board.is_empty(offset + point) {
+        for point in &new_state.0 {
+            if !self.board.is_empty(&(offset + point.clone())) {
                 return false;
             }
         }
@@ -63,7 +63,7 @@ impl GameManager {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
                         continue;
                     };
-                    if self.is_valid_state(new_state, offset) {
+                    if self.is_valid_state(&new_state, offset) {
                         self.curr_tetromino.rotate(action).unwrap();
                         self.curr_pos += offset;
                         return Some(true);
@@ -78,7 +78,7 @@ impl GameManager {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
                         continue;
                     };
-                    if self.is_valid_state(new_state, offset) {
+                    if self.is_valid_state(&new_state, offset) {
                         self.curr_tetromino.rotate(action).unwrap();
                         self.curr_pos += offset;
                         return Some(true);
@@ -87,17 +87,40 @@ impl GameManager {
                 Some(false)
             },
             TetrisAction::D => {
-                let offsets = vec![Position(0, -1)];
+                let offset = Position(0, 1);
 
-                for offset in offsets {
-                    if self.is_valid_state(self.curr_tetromino.state.clone(), offset) {
-                        self.curr_pos += offset;
-                        return Some(true);
-                    }
+                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                    self.curr_pos += offset;
+                    return Some(true);
                 }
                 Some(false)
             },
-            _ => todo!()
+            TetrisAction::L => {
+                let offset = Position(-1, 0);
+                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                    self.curr_pos += offset;
+                    return Some(true);
+                }
+                Some(false)
+            },
+            TetrisAction::R => {
+                let offset = Position(1, 0);
+
+                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                    self.curr_pos += offset;
+                    return Some(true);
+                }
+                Some(false)
+            },
+            TetrisAction::E => Some(true),
+            TetrisAction::H => {
+                let mut offset = Position(0, 1);
+                while self.is_valid_state(&self.curr_tetromino.state, offset) {
+                    offset += Position(0, 1);
+                }
+                self.curr_pos += offset + Position(0, -1);
+                Some(true)
+            },
         }
     }
 }

@@ -37,8 +37,8 @@ impl Board {
 
     /// return true if it is a empty position
     /// return false if it is non-empty or the position doesn't exist
-    pub fn is_empty(&self, position: Position) -> bool {
-        let Some(pos) = self.get(position) else {
+    pub fn is_empty(&self, position: &Position) -> bool {
+        let Some(pos) = self.get(*position) else {
             return false;
         };
         *pos == b'.'

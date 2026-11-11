@@ -18,11 +18,13 @@ impl TetrominoType {
     }
 
     pub fn state(ttype: TetrominoType, rotation: Rotation) -> TetrominoState {
-        todo!()
+        // TODO, the following is just for testing
+        TetrominoState(vec![Position(-1,  0), Position( 0,  0), Position( 1,  0), Position( 2,  0)])
     }
 
     pub fn offsets(ttype: TetrominoType, rotation: Rotation) -> Vec<Position> {
-        todo!()
+        // TODO, the following is just for testing
+        vec![Position( 0,  0), Position(-1,  0), Position( 2,  0), Position(-1,  0), Position( 2,  0)]
     }
 }
 
