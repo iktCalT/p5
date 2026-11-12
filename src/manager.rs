@@ -12,7 +12,7 @@ pub enum ManagerError {
     InsertIntoOccupiedPosition,
     RemoveFromEmptyPosition,
     ActionError,
-    ReceiveError
+    ReceiveError,
 }
 
 pub struct GameManager {
@@ -67,7 +67,10 @@ impl GameManager {
 
             if self.movement(action).is_none() {
                 for point in self.curr_tetromino.state.0.iter() {
-                    self.board.insert(self.curr_pos + point.clone()).unwrap();
+                    if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
+                        // Game Over
+                        return Ok(());
+                    }
                 }
                 self.board.elimination();
                 self.bag_randomizer.next();
@@ -82,7 +85,9 @@ impl GameManager {
                 // Move 1 step down
                 if self.movement(TetrisAction::D).is_none() {
                     for point in self.curr_tetromino.state.0.iter() {
-                        self.board.insert(self.curr_pos + point.clone()).unwrap();
+                        if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
+                            return Ok(());
+                        }
                     }
                     self.board.elimination();
                     self.bag_randomizer.next();
