@@ -18,6 +18,7 @@ fn main() {
     let mut input_path: Option<PathBuf> = None;
     let mut resources_dir = PathBuf::from("resources");
 
+
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
