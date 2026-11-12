@@ -5,7 +5,7 @@ use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, Tetrom
 
 use crate::bag_randomizer::BagRandomizer;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ManagerError {
     PositionNotOnBoard,
     InsertIntoOccupiedPosition,
@@ -40,12 +40,20 @@ impl GameManager {
         }
     }
 
+    pub fn show(&self) {
+        self.board.print();
+    }
+
     pub fn run(&mut self) -> Result<(), ManagerError> {
         loop {
             // TODO input action
             let Ok(action) = self.rx.recv() else {
                 return Err(ManagerError::ReceiveError);
             };
+
+            if action == TetrisAction::Q {
+                break;
+            }
 
             if self.movement(action).is_none() {
                 for point in self.curr_tetromino.state.0.iter() {
@@ -72,13 +80,14 @@ impl GameManager {
                 }
             }
         }
+        Ok(())
     }
 
     // Check if next state valid
     fn is_valid_state(&self, new_state: &TetrominoState, offset: Position) -> bool {
         let new_position = self.curr_pos + offset;
         for point in &new_state.0 {
-            if !self.board.is_empty(&(offset + point.clone())) {
+            if !self.board.is_empty(&(new_position + point.clone())) {
                 return false;
             }
         }
@@ -150,11 +159,12 @@ impl GameManager {
             TetrisAction::H => {
                 let mut offset = Position(0, -1);
                 while self.is_valid_state(&self.curr_tetromino.state, offset) {
-                    offset += Position(0, 1);
+                    offset += Position(0, -1);
                 }
                 self.curr_pos += offset + Position(0, 1);
                 None
             },
+            TetrisAction::Q => None
         }
     }
 }

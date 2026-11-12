@@ -9,12 +9,15 @@ pub enum TetrominoType {
 
 impl TetrominoType {
     fn states(ttype: TetrominoType) -> [TetrominoState; 4] {
-        match ttype {
-            TetrominoType::I => todo!(),
-            TetrominoType::J => todo!(),
-            TetrominoType::L => todo!(),
-            _ => todo!()
-        }
+        // TODO
+        let state = TetrominoState(vec![Position(-1,  0), Position( 0,  0), Position( 1,  0), Position( 2,  0)]);
+        [state.clone(), state.clone(), state.clone(), state.clone()]
+        // match ttype {
+        //     TetrominoType::I => todo!(),
+        //     TetrominoType::J => todo!(),
+        //     TetrominoType::L => todo!(),
+        //     _ => todo!()
+        // }
     }
 
     pub fn state(ttype: TetrominoType, rotation: Rotation) -> TetrominoState {
@@ -28,7 +31,7 @@ impl TetrominoType {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TetrisAction {
     /// Rotate 90 degrees clockwise
     C, 
@@ -44,6 +47,8 @@ pub enum TetrisAction {
     H, 
     /// No action
     E, 
+    /// Quit game
+    Q,
 }
 
 #[repr(u8)]
@@ -183,7 +188,7 @@ impl Tetromino {
             TetrisAction::C => self.rotation = self.rotation.clockwise(),
             TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
             TetrisAction::L | TetrisAction::R | TetrisAction::D | 
-            TetrisAction::H | TetrisAction::E => return Err(ManagerError::ActionError)
+            TetrisAction::H | TetrisAction::E | TetrisAction::Q => return Err(ManagerError::ActionError)
         };
         Ok(())
     }

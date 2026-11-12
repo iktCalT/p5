@@ -1,9 +1,35 @@
-use p5_tetris::board::Board;
+use std::sync::mpsc::channel;
+
+use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::{TetrisAction, TetrominoType}};
+
 
 
 #[test]
-fn test_board_print() {
-    let board = Board::new(10, 20);
-    board.print();
-}
+fn test_manager() {
+    let bag = vec![
+        TetrominoType::I, 
+        TetrominoType::J, 
+        TetrominoType::L, 
+        TetrominoType::O, 
+        TetrominoType::S, 
+        TetrominoType::Z, 
+        TetrominoType::T
+    ];
 
+    let (tx, rx) = channel::<TetrisAction>();
+
+    let seed:[u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+    let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
+    let board = Board::new(4, 5);
+
+    let mut manager = GameManager::new(20, rx, board, bag_randomizer);
+
+    let handle = std::thread::spawn(move || {
+        manager.run().unwrap();
+        manager.show();
+    });
+
+    tx.send(TetrisAction::H).unwrap();
+    tx.send(TetrisAction::Q).unwrap();
+    handle.join().unwrap();
+}
