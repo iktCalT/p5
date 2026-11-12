@@ -54,6 +54,14 @@ impl Board {
         *pos == b'.'
     }
 
+    pub fn elimination(&mut self) {
+        self.grid.retain(|row| row.iter().any(|point| point == &b'.'));
+        let eliminated = self.height - self.grid.len();
+        for _ in 0..eliminated {
+            self.grid.push(vec![b'.'; self.width]);
+        }
+    }
+
     pub fn insert(&mut self, position: Position) -> Result<(), ManagerError> {
         if position.1 >= self.height as isize {
             return Ok(());

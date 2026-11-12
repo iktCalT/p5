@@ -201,8 +201,14 @@ impl Tetromino {
 
     pub fn rotate(&mut self, action: TetrisAction) -> Result<(), ManagerError> {
         match action {
-            TetrisAction::C => self.rotation = self.rotation.clockwise(),
-            TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
+            TetrisAction::C => {
+                self.rotation = self.rotation.clockwise();
+                self.state = self.ttype.states()[self.rotation as usize].clone();
+            },
+            TetrisAction::W => {
+                self.rotation = self.rotation.counter_clockwise();
+                self.state = self.ttype.states()[self.rotation as usize].clone();
+            },
             TetrisAction::L | TetrisAction::R | TetrisAction::D | 
             TetrisAction::H | TetrisAction::E | TetrisAction::Q => return Err(ManagerError::ActionError)
         };
