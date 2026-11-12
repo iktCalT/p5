@@ -48,6 +48,11 @@ impl GameManager {
         self.board.print();
     }
 
+    /// Only for debugging
+    pub fn show_with_tetromino(&self) {
+        self.board.print_with_tetromino(&self.curr_tetromino, &self.curr_pos);
+    }
+
     pub fn run(&mut self) -> Result<(), ManagerError> {
         loop {
             // TODO input action

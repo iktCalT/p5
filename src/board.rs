@@ -1,5 +1,6 @@
-use crate::{manager::ManagerError, tetromino::Position};
+use crate::{manager::ManagerError, tetromino::{self, Position, Tetromino}};
 
+#[derive(Debug, Clone)]
 pub struct Board {
     pub width: usize,
     pub height: usize,
@@ -19,6 +20,15 @@ impl Board {
         for row in self.grid.iter().rev() {
             println!("{}", String::from_utf8(row.clone()).expect("Error row"));
         }
+    }
+
+    /// Is is an expensive function, only used for debugging
+    pub fn print_with_tetromino(&self, tetromino: &Tetromino, position: &Position) {
+        let mut copy = self.clone();
+        for point in tetromino.state.0.iter() {
+            copy.insert(position.clone() + point.clone()).unwrap();
+        }
+        copy.print();
     }
 
     fn get(&self, position: Position) -> Option<&u8> {
@@ -45,6 +55,10 @@ impl Board {
     }
 
     pub fn insert(&mut self, position: Position) -> Result<(), ManagerError> {
+        if position.1 >= self.height as isize {
+            return Ok(());
+        }
+
         let Some(pos) = self.get_mut(position) else {
             return Err(ManagerError::PositionNotOnBoard);
         };
