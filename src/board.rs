@@ -1,8 +1,8 @@
 use crate::{manager::ManagerError, tetromino::Position};
 
 pub struct Board {
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
     grid: Vec<Vec<u8>>,
 }
 
@@ -16,7 +16,7 @@ impl Board {
     }
 
     pub fn print(&self) {
-        for row in &self.grid {
+        for row in self.grid.iter().rev() {
             println!("{}", String::from_utf8(row.clone()).expect("Error row"));
         }
     }

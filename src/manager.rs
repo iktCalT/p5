@@ -1,3 +1,5 @@
+use std::sync::mpsc::Receiver;
+
 use crate::board::Board;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
@@ -8,35 +10,67 @@ pub enum ManagerError {
     PositionNotOnBoard,
     InsertIntoOccupiedPosition,
     RemoveFromEmptyPosition,
-    ActionError
+    ActionError,
+    ReceiveError
 }
 
-struct GameManager {
+pub struct GameManager {
+    rx: Receiver<TetrisAction>,
     time: u64,
     gravity: u64,
     board: Board,
     bag_randomizer: BagRandomizer<TetrominoType>,
     curr_pos: Position,
-    curr_tetromino: Tetromino
+    curr_tetromino: Tetromino,
 }
 
 impl GameManager {
-    pub fn new(gravity: u64, board: Board, mut bag_randomizer: BagRandomizer<TetrominoType>) -> Self {
+    pub fn new(gravity: u64, rx: Receiver<TetrisAction>, board: Board, mut bag_randomizer: BagRandomizer<TetrominoType>) -> Self {
         let curr_tetromino = Tetromino::new(bag_randomizer.cur().clone());
         bag_randomizer.next();
+        let curr_pos = Position(((board.width - 1) / 2) as isize, (board.height - 1) as isize);
         Self { 
-            time: 0, 
+            rx,
+            time: 0,
             gravity,
             board,
             bag_randomizer,
-            curr_pos: Position(0, 0),
-            curr_tetromino
+            curr_pos,
+            curr_tetromino,
         }
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self) -> Result<(), ManagerError> {
         loop {
+            // TODO input action
+            let Ok(action) = self.rx.recv() else {
+                return Err(ManagerError::ReceiveError);
+            };
 
+            if self.movement(action).is_none() {
+                for point in self.curr_tetromino.state.0.iter() {
+                    self.board.insert(self.curr_pos + point.clone()).unwrap();
+                }
+                self.bag_randomizer.next();
+                self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
+                self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
+                self.time = 0;
+                continue;
+            }
+            self.time += 1;
+
+            if self.time % self.gravity == 0 {
+                // Move 1 step down
+                if self.movement(TetrisAction::D).is_none() {
+                    for point in self.curr_tetromino.state.0.iter() {
+                        self.board.insert(self.curr_pos + point.clone()).unwrap();
+                    }
+                    self.bag_randomizer.next();
+                    self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
+                    self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
+                    self.time = 0;
+                }
+            }
         }
     }
 
@@ -87,13 +121,13 @@ impl GameManager {
                 Some(false)
             },
             TetrisAction::D => {
-                let offset = Position(0, 1);
+                let offset = Position(0, -1);
 
                 if self.is_valid_state(&self.curr_tetromino.state, offset) {
                     self.curr_pos += offset;
                     return Some(true);
                 }
-                Some(false)
+                None
             },
             TetrisAction::L => {
                 let offset = Position(-1, 0);
@@ -114,12 +148,12 @@ impl GameManager {
             },
             TetrisAction::E => Some(true),
             TetrisAction::H => {
-                let mut offset = Position(0, 1);
+                let mut offset = Position(0, -1);
                 while self.is_valid_state(&self.curr_tetromino.state, offset) {
                     offset += Position(0, 1);
                 }
-                self.curr_pos += offset + Position(0, -1);
-                Some(true)
+                self.curr_pos += offset + Position(0, 1);
+                None
             },
         }
     }
