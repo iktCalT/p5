@@ -51,6 +51,7 @@ impl GameManager {
     /// Only for debugging
     pub fn show_with_tetromino(&self) {
         self.board.print_with_tetromino(&self.curr_tetromino, &self.curr_pos);
+        println!();
     }
 
     pub fn run(&mut self) -> Result<(), ManagerError> {
@@ -68,6 +69,7 @@ impl GameManager {
                 for point in self.curr_tetromino.state.0.iter() {
                     self.board.insert(self.curr_pos + point.clone()).unwrap();
                 }
+                self.board.elimination();
                 self.bag_randomizer.next();
                 self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
                 self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
@@ -82,6 +84,7 @@ impl GameManager {
                     for point in self.curr_tetromino.state.0.iter() {
                         self.board.insert(self.curr_pos + point.clone()).unwrap();
                     }
+                    self.board.elimination();
                     self.bag_randomizer.next();
                     self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone(), );
                     self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
