@@ -1,6 +1,7 @@
 use std::sync::mpsc::Receiver;
 
 use crate::board::Board;
+use crate::setting::Settings;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
 use crate::bag_randomizer::BagRandomizer;
@@ -15,6 +16,7 @@ pub enum ManagerError {
 }
 
 pub struct GameManager {
+    settings: Settings,
     rx: Receiver<TetrisAction>,
     time: u64,
     gravity: u64,
@@ -25,11 +27,13 @@ pub struct GameManager {
 }
 
 impl GameManager {
-    pub fn new(gravity: u64, rx: Receiver<TetrisAction>, board: Board, mut bag_randomizer: BagRandomizer<TetrominoType>) -> Self {
+    pub fn new(gravity: u64, settings: Settings, rx: Receiver<TetrisAction>, 
+            board: Board, mut bag_randomizer: BagRandomizer<TetrominoType>) -> Self {
         let curr_tetromino = Tetromino::new(bag_randomizer.cur().clone());
         bag_randomizer.next();
         let curr_pos = Position(((board.width - 1) / 2) as isize, (board.height - 1) as isize);
-        Self { 
+        Self {
+            settings,
             rx,
             time: 0,
             gravity,
@@ -74,7 +78,7 @@ impl GameManager {
                         self.board.insert(self.curr_pos + point.clone()).unwrap();
                     }
                     self.bag_randomizer.next();
-                    self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
+                    self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone(), );
                     self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
                     self.time = 0;
                 }
@@ -100,7 +104,7 @@ impl GameManager {
     pub fn movement(&mut self, action: TetrisAction) -> Option<bool> {
         match action {
             TetrisAction::C => {
-                let offsets = TetrominoType::offsets(self.curr_tetromino.ttype, self.curr_tetromino.rotation.clockwise());
+                let offsets = self.curr_tetromino.ttype.wall_kick(self.curr_tetromino.rotation.clockwise());
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
@@ -115,7 +119,7 @@ impl GameManager {
                 Some(false)
             },
             TetrisAction::W => {
-                let offsets = TetrominoType::offsets(self.curr_tetromino.ttype, self.curr_tetromino.rotation.counter_clockwise());
+                let offsets = self.curr_tetromino.ttype.wall_kick(self.curr_tetromino.rotation.counter_clockwise());
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {

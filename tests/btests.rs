@@ -11,7 +11,7 @@ fn test_board_print() {
 #[test]
 fn test_board_insert() {
     let mut board = Board::new(3, 4);
-    let pos = Position(0, 0);
+    let pos = Position(1, 0);
     assert_eq!(true, board.is_empty(&pos));
 
     board.insert(pos).unwrap();
@@ -23,7 +23,7 @@ fn test_board_insert() {
 #[test]
 fn test_board_remove() {
     let mut board = Board::new(3, 4);
-    let pos = Position(0, 0);
+    let pos = Position(1, 0);
     assert_eq!(true, board.is_empty(&pos));
 
     board.insert(pos).unwrap();

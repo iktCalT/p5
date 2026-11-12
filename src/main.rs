@@ -1,6 +1,6 @@
-use std::sync::mpsc::{self, channel};
+use std::sync::mpsc::channel;
 
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::{TetrisAction, TetrominoType}};
+use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::Settings, tetromino::{TetrisAction, TetrominoType}};
 
 fn main() {
     let bag = vec![
@@ -18,6 +18,7 @@ fn main() {
     let seed:[u8; 16] = todo!();
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(20, 10);
+    let settings = Settings::new();
 
-    let manager = GameManager::new(20, rx, board, bag_randomizer);
+    let manager = GameManager::new(20, settings, rx, board, bag_randomizer);
 }

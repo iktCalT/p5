@@ -26,6 +26,7 @@ type RngAlgorithm = Xoshiro128PlusPlus;
 /// let different_item = *randomizer.cur();
 /// assert_ne!(first_item, different_item);
 /// ```
+#[derive(Debug, Clone)]
 pub struct BagRandomizer<T> {
     bag: Vec<T>,
     idx: usize,

@@ -22,17 +22,17 @@ impl Board {
     }
 
     fn get(&self, position: Position) -> Option<&u8> {
-        let Some(row) = self.grid.get(position.0 as usize) else {
+        let Some(row) = self.grid.get(position.1 as usize) else {
             return None;
         };
-        row.get(position.1 as usize)
+        row.get(position.0 as usize)
     }
 
     fn get_mut(&mut self, position: Position) -> Option<&mut u8> {
-        let Some(row) = self.grid.get_mut(position.0 as usize) else {
+        let Some(row) = self.grid.get_mut(position.1 as usize) else {
             return None;
         };
-        row.get_mut(position.1 as usize)
+        row.get_mut(position.0 as usize)
     }
 
     /// return true if it is a empty position
@@ -45,7 +45,7 @@ impl Board {
     }
 
     pub fn insert(&mut self, position: Position) -> Result<(), ManagerError> {
-        let Some(mut pos) = self.get_mut(position) else {
+        let Some(pos) = self.get_mut(position) else {
             return Err(ManagerError::PositionNotOnBoard);
         };
         if *pos == b'o' {
@@ -56,7 +56,7 @@ impl Board {
     }
 
     pub fn remove(&mut self, position: Position) -> Result<(), ManagerError> {
-        let Some(mut pos) = self.get_mut(position) else {
+        let Some(pos) = self.get_mut(position) else {
             return Err(ManagerError::PositionNotOnBoard);
         };
         if *pos == b'.' {
