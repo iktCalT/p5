@@ -62,9 +62,10 @@ impl Board {
         }
     }
 
-    pub fn insert(&mut self, position: Position) -> Result<(), ManagerError> {
+    /// return Ok(false) if game over
+    pub fn insert(&mut self, position: Position) -> Result<bool, ManagerError> {
         if position.1 >= self.height as isize {
-            return Ok(());
+            return Ok(false);
         }
 
         let Some(pos) = self.get_mut(position) else {
@@ -74,7 +75,7 @@ impl Board {
             return Err(ManagerError::InsertIntoOccupiedPosition);
         }
         *pos = b'o';
-        Ok(())
+        Ok(true)
     }
 
     pub fn remove(&mut self, position: Position) -> Result<(), ManagerError> {
