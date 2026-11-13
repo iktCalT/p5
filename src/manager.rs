@@ -1,7 +1,7 @@
 use std::sync::mpsc::Receiver;
 
 use crate::board::Board;
-use crate::setting::Settings;
+use crate::setting::SETTINGS;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
 use crate::bag_randomizer::BagRandomizer;
@@ -115,30 +115,30 @@ impl GameManager {
     pub fn movement(&mut self, action: TetrisAction) -> Option<bool> {
         match action {
             TetrisAction::C => {
-                let offsets = self.curr_tetromino.ttype.wall_kick(self.curr_tetromino.rotation.clockwise());
+                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.clockwise());
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
                         continue;
                     };
-                    if self.is_valid_state(&new_state, offset) {
+                    if self.is_valid_state(&new_state, *offset) {
                         self.curr_tetromino.rotate(action).unwrap();
-                        self.curr_pos += offset;
+                        self.curr_pos += *offset;
                         return Some(true);
                     }
                 }
                 Some(false)
             },
             TetrisAction::W => {
-                let offsets = self.curr_tetromino.ttype.wall_kick(self.curr_tetromino.rotation.counter_clockwise());
+                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.counter_clockwise());
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
                         continue;
                     };
-                    if self.is_valid_state(&new_state, offset) {
+                    if self.is_valid_state(&new_state, *offset) {
                         self.curr_tetromino.rotate(action).unwrap();
-                        self.curr_pos += offset;
+                        self.curr_pos += *offset;
                         return Some(true);
                     }
                 }

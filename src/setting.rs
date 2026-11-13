@@ -1,6 +1,10 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap, fs, path::PathBuf, sync::LazyLock};
 
 use crate::tetromino::{Position, Rotation, TetrominoState, TetrominoType, WallKick};
+
+pub static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
+    Settings::new(PathBuf::from("resources"))
+});
 
 // Read settings from json files
 pub struct Settings {

@@ -1,10 +1,9 @@
-use std::sync::LazyLock;
 use std::sync::mpsc::channel;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::Settings, tetromino::{TetrisAction, TetrominoType}};
+use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::{TetrisAction, TetrominoType}};
 
 #[derive(Default, Debug)]
 struct CliArgs {
@@ -14,10 +13,6 @@ struct CliArgs {
     list_bots: bool,
     trace_bot_run: Option<(String, PathBuf, String, PathBuf)>,
 }
-
-static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
-    Settings::new(PathBuf::from("resources"))
-});
 
 fn main() {
     let mut input_path: Option<PathBuf> = None;
