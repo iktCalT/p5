@@ -20,7 +20,7 @@ fn test_manager() {
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 
-    let mut manager = GameManager::new(20, Settings::new(), rx, board, bag_randomizer);
+    let mut manager = GameManager::new(20, rx, board, bag_randomizer);
 
     let handle = std::thread::spawn(move || {
         manager.run().unwrap();
@@ -52,7 +52,7 @@ fn test_manager_gravity() {
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 
-    let mut manager = GameManager::new(5, Settings::new(), rx, board, bag_randomizer);
+    let mut manager = GameManager::new(5, rx, board, bag_randomizer);
 
     let handle = std::thread::spawn(move || {
         manager.show_with_tetromino();
@@ -94,7 +94,7 @@ fn test_manager_rotate() {
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 
-    let mut manager = GameManager::new(20, Settings::new(), rx, board, bag_randomizer);
+    let mut manager = GameManager::new(20, rx, board, bag_randomizer);
 
     let handle = std::thread::spawn(move || {
         manager.run().unwrap();
