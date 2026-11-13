@@ -1,3 +1,4 @@
+use std::sync::LazyLock;
 use std::sync::mpsc::channel;
 use std::env;
 use std::fs;
@@ -14,10 +15,13 @@ struct CliArgs {
     trace_bot_run: Option<(String, PathBuf, String, PathBuf)>,
 }
 
+static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
+    Settings::new(PathBuf::from("resources"))
+});
+
 fn main() {
     let mut input_path: Option<PathBuf> = None;
     let mut resources_dir = PathBuf::from("resources");
-
 
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -36,8 +40,9 @@ fn main() {
 
     let input_path = input_path.expect("Missing input path for single player inputs");
 
-    let config_str = fs::read_to_string(resources_dir.join("config.json")).expect("Failed to read config.json");
-    let config: serde_json::Value = serde_json::from_str(&config_str).expect("failed to parse config.json");
+    // Parse config.json
+    let config_path = fs::read_to_string(resources_dir.join("config.json")).expect("config.json doesn't exist");
+    let config: serde_json::Value = serde_json::from_str(&config_path).expect("Failed to parse config.json");
 
     let width = config["width"].as_u64().unwrap_or(10) as usize;
     let height = config["height"].as_u64().unwrap_or(20) as usize;
@@ -86,9 +91,8 @@ fn main() {
 
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(width, height);
-    let settings = Settings::new();
 
-    let mut manager = GameManager::new(gravity, settings, rx, board, bag_randomizer);
+    let mut manager = GameManager::new(gravity, rx, board, bag_randomizer);
     let _ = manager.run();
     manager.show_with_tetromino();
 }

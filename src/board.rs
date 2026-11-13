@@ -1,4 +1,4 @@
-use crate::{manager::ManagerError, tetromino::{self, Position, Tetromino}};
+use crate::{manager::ManagerError, tetromino::{Position, Tetromino}};
 
 #[derive(Debug, Clone)]
 pub struct Board {
@@ -25,7 +25,7 @@ impl Board {
     /// Is is an expensive function, only used for debugging
     pub fn print_with_tetromino(&self, tetromino: &Tetromino, position: &Position) {
         let mut copy = self.clone();
-        for point in tetromino.state.0.iter() {
+        for point in tetromino.state().0.iter() {
             copy.insert(position.clone() + point.clone()).unwrap();
         }
         copy.print();

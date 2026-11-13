@@ -16,7 +16,6 @@ pub enum ManagerError {
 }
 
 pub struct GameManager {
-    settings: Settings,
     rx: Receiver<TetrisAction>,
     time: u64,
     gravity: u64,
@@ -27,13 +26,12 @@ pub struct GameManager {
 }
 
 impl GameManager {
-    pub fn new(gravity: u64, settings: Settings, rx: Receiver<TetrisAction>, 
+    pub fn new(gravity: u64, rx: Receiver<TetrisAction>, 
             board: Board, mut bag_randomizer: BagRandomizer<TetrominoType>) -> Self {
         let curr_tetromino = Tetromino::new(bag_randomizer.cur().clone());
         bag_randomizer.next();
         let curr_pos = Position(((board.width - 1) / 2) as isize, (board.height - 1) as isize);
         Self {
-            settings,
             rx,
             time: 0,
             gravity,
@@ -66,7 +64,7 @@ impl GameManager {
             }
 
             if self.movement(action).is_none() {
-                for point in self.curr_tetromino.state.0.iter() {
+                for point in self.curr_tetromino.state().0.iter() {
                     if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
                         // Game Over
                         return Ok(());
@@ -84,7 +82,7 @@ impl GameManager {
             if self.time % self.gravity == 0 {
                 // Move 1 step down
                 if self.movement(TetrisAction::D).is_none() {
-                    for point in self.curr_tetromino.state.0.iter() {
+                    for point in self.curr_tetromino.state().0.iter() {
                         if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
                             return Ok(());
                         }
@@ -149,7 +147,7 @@ impl GameManager {
             TetrisAction::D => {
                 let offset = Position(0, -1);
 
-                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                if self.is_valid_state(&self.curr_tetromino.state(), offset) {
                     self.curr_pos += offset;
                     return Some(true);
                 }
@@ -157,7 +155,7 @@ impl GameManager {
             },
             TetrisAction::L => {
                 let offset = Position(-1, 0);
-                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                if self.is_valid_state(&self.curr_tetromino.state(), offset) {
                     self.curr_pos += offset;
                     return Some(true);
                 }
@@ -166,7 +164,7 @@ impl GameManager {
             TetrisAction::R => {
                 let offset = Position(1, 0);
 
-                if self.is_valid_state(&self.curr_tetromino.state, offset) {
+                if self.is_valid_state(&self.curr_tetromino.state(), offset) {
                     self.curr_pos += offset;
                     return Some(true);
                 }
@@ -175,7 +173,7 @@ impl GameManager {
             TetrisAction::E => Some(true),
             TetrisAction::H => {
                 let mut offset = Position(0, -1);
-                while self.is_valid_state(&self.curr_tetromino.state, offset) {
+                while self.is_valid_state(&self.curr_tetromino.state(), offset) {
                     offset += Position(0, -1);
                 }
                 self.curr_pos += offset + Position(0, 1);

@@ -2,9 +2,24 @@ use std::ops::{Add, AddAssign};
 
 use crate::{manager::ManagerError, setting::Settings};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TetrominoType {
     I, J, L, O, S, Z, T
+}
+
+impl Into<TetrominoType> for &str {
+    fn into(self) -> TetrominoType {
+        match self {
+            "i" => TetrominoType::I,
+            "j" => TetrominoType::J,
+            "l" => TetrominoType::L,
+            "o" => TetrominoType::O,
+            "s" => TetrominoType::S,
+            "z" => TetrominoType::Z,
+            "t" => TetrominoType::T,
+            _ => panic!("Cannot convert {} into TetrominoType", self)
+        }
+    }
 }
 
 impl TetrominoType {
@@ -146,11 +161,23 @@ impl Rotation {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum WallKick {
     Normal, I, O
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Into<WallKick> for &str {
+    fn into(self) -> WallKick {
+        match self {
+            "Normal" => WallKick::Normal,
+            "I" => WallKick::I,
+            "O" => WallKick::O,
+            _ => panic!("Cannot convert {} into WallKick", self)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position(pub isize, pub isize);
 
 impl Add<Self> for Position {
@@ -170,24 +197,24 @@ impl AddAssign for Position {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TetrominoState(pub Vec<Position>);
 
 pub struct Tetromino {
     pub ttype: TetrominoType,
-    pub state: TetrominoState,
     pub rotation: Rotation,
 }
 
 impl Tetromino {
     pub fn new(ttype: TetrominoType) -> Self {
-        let state = ttype.states()[0].clone();
-
         Self {
-            ttype, 
-            state,
+            ttype,
             rotation: Rotation::Origin
         }
+    }
+
+    pub fn state(&self) -> TetrominoState {
+        self.ttype.state(self.rotation)
     }
 
     /// Try to rotate, but don't change the actual states
@@ -201,14 +228,8 @@ impl Tetromino {
 
     pub fn rotate(&mut self, action: TetrisAction) -> Result<(), ManagerError> {
         match action {
-            TetrisAction::C => {
-                self.rotation = self.rotation.clockwise();
-                self.state = self.ttype.states()[self.rotation as usize].clone();
-            },
-            TetrisAction::W => {
-                self.rotation = self.rotation.counter_clockwise();
-                self.state = self.ttype.states()[self.rotation as usize].clone();
-            },
+            TetrisAction::C => self.rotation = self.rotation.clockwise(),
+            TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
             TetrisAction::L | TetrisAction::R | TetrisAction::D | 
             TetrisAction::H | TetrisAction::E | TetrisAction::Q => return Err(ManagerError::ActionError)
         };
