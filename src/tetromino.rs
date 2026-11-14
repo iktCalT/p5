@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign};
 
-use crate::{manager::ManagerError, setting::{SETTINGS, Settings}};
+use crate::{manager::ManagerError, setting::SETTINGS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TetrominoType {

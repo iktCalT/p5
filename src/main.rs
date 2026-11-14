@@ -5,14 +5,14 @@ use std::path::PathBuf;
 
 use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::{TetrisAction, TetrominoType}};
 
-#[derive(Default, Debug)]
-struct CliArgs {
-    resources: Option<PathBuf>,
-    single_player_input: Option<PathBuf>,
-    multi_player_inputs: Vec<PathBuf>,
-    list_bots: bool,
-    trace_bot_run: Option<(String, PathBuf, String, PathBuf)>,
-}
+// #[derive(Default, Debug)]
+// struct CliArgs {
+//     resources: Option<PathBuf>,
+//     single_player_input: Option<PathBuf>,
+//     multi_player_inputs: Vec<PathBuf>,
+//     list_bots: bool,
+//     trace_bot_run: Option<(String, PathBuf, String, PathBuf)>,
+// }
 
 fn main() {
     let mut input_path: Option<PathBuf> = None;
@@ -29,7 +29,7 @@ fn main() {
                 let dir = args.next().expect("Expected directory");
                 resources_dir = PathBuf::from(dir);
             }
-            other => panic!("Unknown arg"),
+            _ => panic!("Unknown arg"),
         }
     }
 
@@ -42,6 +42,8 @@ fn main() {
     let width = config["width"].as_u64().unwrap_or(10) as usize;
     let height = config["height"].as_u64().unwrap_or(20) as usize;
     let gravity = config["gravity"].as_u64().unwrap_or(20);
+    let gravity_decrease = config["gravity_decrease"].as_u64().unwrap_or(10);
+    let lock_delay = config["lock_delay"].as_u64().unwrap_or(15);
 
     let mut seed = [0u8; 16];
     for (i, v) in config["random_seed"]
@@ -76,7 +78,7 @@ fn main() {
             'D' => TetrisAction::D,
             'H' => TetrisAction::H,
             'E' => TetrisAction::E,
-            other => panic!("invalid input move"),
+            _ => panic!("invalid input move"),
         };
         let _ = tx.send(action);
     }
@@ -87,7 +89,7 @@ fn main() {
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(width, height);
 
-    let mut manager = GameManager::new(gravity, rx, board, bag_randomizer);
+    let mut manager = GameManager::new(gravity, gravity_decrease, lock_delay, rx, board, bag_randomizer);
     let _ = manager.run();
     manager.show_with_tetromino();
 }
