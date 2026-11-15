@@ -43,6 +43,25 @@ impl Board {
         copy.print();
     }
 
+    /// Is is an expensive function, only used for debugging
+    pub fn as_string(&self, tetromino: &Tetromino, position: &Position) -> String {
+        let mut copy = self.clone();
+        for point in tetromino.state().0.iter() {
+            // Overlay the falling piece directly instead of going through
+            // `insert`
+            if let Some(cell) = copy.get_mut(*position + point.clone()) {
+                *cell = b'o';
+            }
+        }
+        
+        let mut string = String::new();
+        for row in copy.grid.iter().rev() {
+            string.insert_str(string.len(), str::from_utf8(&row).expect("Error row"));
+            string.insert(string.len(), b'\n' as char);
+        }
+        string
+    }
+
     fn get(&self, position: Position) -> Option<&u8> {
         if position.0 < 0 || position.1 < 0 {
             return None;

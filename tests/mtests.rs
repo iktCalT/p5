@@ -1,18 +1,10 @@
 use std::{sync::mpsc::channel, thread::current};
 
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::Settings, tetromino::{TetrisAction, TetrominoType}};
+use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::{SETTINGS, Settings}, tetromino::{TetrisAction, TetrominoType}};
 
 #[test]
 fn test_manager() {
-    let bag = vec![
-        TetrominoType::I, 
-        TetrominoType::J, 
-        TetrominoType::L, 
-        TetrominoType::O, 
-        TetrominoType::S, 
-        TetrominoType::Z, 
-        TetrominoType::T
-    ];
+    let bag = SETTINGS.bag();
 
     let (tx, rx) = channel::<TetrisAction>();
 
@@ -36,15 +28,7 @@ fn test_manager() {
 
 #[test]
 fn test_manager_gravity() {
-    let bag = vec![
-        TetrominoType::I, 
-        TetrominoType::J, 
-        TetrominoType::L, 
-        TetrominoType::O, 
-        TetrominoType::S, 
-        TetrominoType::Z, 
-        TetrominoType::T
-    ];
+    let bag = SETTINGS.bag();
 
     let (tx, rx) = channel::<TetrisAction>();
 
@@ -78,15 +62,7 @@ fn test_manager_gravity() {
 
 #[test]
 fn test_manager_rotate() {
-    let bag = vec![
-        TetrominoType::I, 
-        TetrominoType::J, 
-        TetrominoType::L, 
-        TetrominoType::O, 
-        TetrominoType::S, 
-        TetrominoType::Z, 
-        TetrominoType::T
-    ];
+    let bag = SETTINGS.bag();
 
     let (tx, rx) = channel::<TetrisAction>();
 

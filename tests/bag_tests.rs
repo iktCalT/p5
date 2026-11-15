@@ -1,16 +1,8 @@
-use p5_tetris::{bag_randomizer::BagRandomizer, tetromino::TetrominoType};
+use p5_tetris::{bag_randomizer::BagRandomizer, setting::SETTINGS, tetromino::TetrominoType};
 
 #[test]
 fn bag_randomizer_test() {
-    let bag = vec![
-        TetrominoType::I, 
-        TetrominoType::J, 
-        TetrominoType::L, 
-        TetrominoType::O, 
-        TetrominoType::S, 
-        TetrominoType::Z, 
-        TetrominoType::T
-    ];
+    let bag = SETTINGS.bag();
 
     let seed:[u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
     let mut bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);

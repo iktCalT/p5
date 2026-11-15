@@ -2,9 +2,9 @@ use std::ops::{Add, AddAssign};
 
 use crate::{manager::ManagerError, setting::SETTINGS};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum TetrominoType {
-    I, J, L, O, S, Z, T
+    I, J, L, O, S, T, Z
 }
 
 impl Into<TetrominoType> for &str {
@@ -15,8 +15,8 @@ impl Into<TetrominoType> for &str {
             "l" => TetrominoType::L,
             "o" => TetrominoType::O,
             "s" => TetrominoType::S,
-            "z" => TetrominoType::Z,
             "t" => TetrominoType::T,
+            "z" => TetrominoType::Z,
             _ => panic!("Cannot convert {} into TetrominoType", self)
         }
     }
@@ -40,6 +40,24 @@ pub enum TetrisAction {
     E, 
     /// Quit game
     Q,
+    /// Show board (for debugging)
+    S
+}
+
+impl Into<TetrisAction> for u8 {
+    fn into(self) -> TetrisAction {
+        match self.to_ascii_lowercase() {
+            b'c' => TetrisAction::C,
+            b'w' => TetrisAction::W,
+            b'l' => TetrisAction::L,
+            b'r' => TetrisAction::R,
+            b'd' => TetrisAction::D,
+            b'h' => TetrisAction::H,
+            b'e' => TetrisAction::E,
+            b'q' => TetrisAction::Q,
+            _ => panic!("Invalid input command")
+        }
+    }
 }
 
 #[repr(u8)]
@@ -138,7 +156,8 @@ impl Tetromino {
             TetrisAction::C => self.rotation = self.rotation.clockwise(),
             TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
             TetrisAction::L | TetrisAction::R | TetrisAction::D | 
-            TetrisAction::H | TetrisAction::E | TetrisAction::Q => return Err(ManagerError::ActionError)
+            TetrisAction::H | TetrisAction::E | TetrisAction::Q | 
+            TetrisAction::S => return Err(ManagerError::ActionError)
         };
         Ok(())
     }

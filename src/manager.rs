@@ -52,7 +52,7 @@ impl GameManager {
         let curr_tetromino = Tetromino::new(*bag_randomizer.cur());
         // The first piece is now in play, so move past it in the bag.
         bag_randomizer.next();
-        // let curr_pos = Position(((board.width - 1) / 2) as isize, (board.height - 1) as isize);
+        
         Self {
             rx,
             time: 0,
@@ -81,6 +81,10 @@ impl GameManager {
         self.board.print_with_tetromino(&self.curr_tetromino, &self.curr_pos);
     }
 
+    pub fn show_as_string(&self) -> String {
+        self.board.as_string(&self.curr_tetromino, &self.curr_pos)
+    }
+
     pub fn run(&mut self) -> Result<(), ManagerError> {
         loop {
             // TODO input action
@@ -90,6 +94,11 @@ impl GameManager {
 
             if action == TetrisAction::Q {
                 break;
+            }
+
+            if action == TetrisAction::S {
+                self.show_with_tetromino();
+                continue;
             }
 
             if self.step(action)?.topped_out {
@@ -284,7 +293,8 @@ impl GameManager {
                 self.curr_pos += offset + Position(0, 1);
                 None
             },
-            TetrisAction::Q => None
+            TetrisAction::S => panic!(),
+            TetrisAction::Q => panic!()
         }
     }
 }

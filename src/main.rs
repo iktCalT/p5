@@ -3,6 +3,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
+use p5_tetris::setting::SETTINGS;
 use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::{TetrisAction, TetrominoType}};
 
 // #[derive(Default, Debug)]
@@ -56,15 +57,7 @@ fn main() {
         seed[i] = v.as_u64().expect("Invalid byte in random_seed") as u8;
     }
 
-    let bag = vec![
-        TetrominoType::I, 
-        TetrominoType::J, 
-        TetrominoType::L, 
-        TetrominoType::O, 
-        TetrominoType::S, 
-        TetrominoType::T, 
-        TetrominoType::Z
-    ];
+    let bag = SETTINGS.bag();
 
     let (tx, rx) = channel::<TetrisAction>();
 
