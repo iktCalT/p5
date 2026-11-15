@@ -72,7 +72,8 @@ impl Board {
         *pos == b'.'
     }
 
-    pub fn elimination(&mut self) {
+    /// Removes every filled row and return # rows cleared.
+    pub fn elimination(&mut self) -> usize {
         // Restore against the grid length (height + SPAWN_BUFFER = 22), not playing field length
         let rows_before = self.grid.len();
         self.grid.retain(|row| row.iter().any(|point| point == &b'.'));
@@ -81,6 +82,28 @@ impl Board {
         for _ in 0..eliminated {
             self.grid.push(vec![b'.'; self.width]);
         }
+        eliminated
+    }
+
+    /// Adds one garbage row at the bottom of the board.
+    pub fn add_garbage_row(&mut self, hole_col: usize) {
+        // Drop the top row, then push a new bottom row in.
+        self.grid.pop();
+        let mut row = vec![b'o'; self.width];
+        if hole_col < self.width {
+            row[hole_col] = b'.';
+        }
+        self.grid.insert(0, row);
+    }
+
+    /// True if any filled cell sits at or above row `height` (a top-out).
+    /// Locked cells never reach the spawn buffer during normal play, so this
+    /// only becomes true after garbage shifts the stack too high.
+    pub fn is_topped_out(&self) -> bool {
+        self.grid
+            .iter()
+            .skip(self.height)
+            .any(|row| row.iter().any(|cell| *cell == b'o'))
     }
 
     /// Marks the cell at `position` as Filled. 

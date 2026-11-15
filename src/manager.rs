@@ -15,6 +15,15 @@ pub enum ManagerError {
     ReceiveError,
 }
 
+/// What happened during a single Step.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct StepOutcome {
+    /// Number of full rows cleared when the piece locked this frame (0 if none).
+    pub lines_cleared: usize,
+    /// True if the player topped out this frame; the game is over.
+    pub topped_out: bool,
+}
+
 pub struct GameManager {
     rx: Receiver<TetrisAction>,
     /// Frames elapsed since the current piece was last forced down by gravity.
@@ -24,7 +33,7 @@ pub struct GameManager {
     gravity_decrease: u64,
     /// Frames a piece may rest on the ground before it locks into place.
     lock_delay: u64,
-    board: Board,
+    pub board: Board,
     bag_randomizer: BagRandomizer<TetrominoType>,
     curr_pos: Position,
     curr_tetromino: Tetromino,
@@ -83,66 +92,76 @@ impl GameManager {
                 break;
             }
 
-            // if self.movement(action).is_none() {
-            //     for point in self.curr_tetromino.state().0.iter() {
-            //         if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
-            //             // Game Over
-            //             return Ok(());
-            //         }
-            //     }
-            //     self.board.elimination();
-            //     self.bag_randomizer.next();
-            //     self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
-            //     self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
-            //     self.time = 0;
-            //     continue;
-            // }
-            // (2) Perform the action for this frame. 
-            // Soft (D) lowers gravity & cont; 
-            // Hard (H) moves piece to the floor and returns None.
-            let soft_drop = action == TetrisAction::D;
-            if self.movement(action).is_none() {
-                if self.lock_piece()? { // refactored for again
-                    return Ok(());
-                }
-                continue;
-            }
-            // (3) Advance gravity / lock delay.
-            self.time += 1;
-
-            // if self.time % self.gravity == 0 {
-            //     // Move 1 step down
-            //     if self.movement(TetrisAction::D).is_none() {
-            //         for point in self.curr_tetromino.state().0.iter() {
-            //             if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
-            //                 return Ok(());
-            //             }
-            //         }
-            //         self.board.elimination();
-            //         self.bag_randomizer.next();
-            //         self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone(), );
-            //         self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
-            //         self.time = 0;
-            //     }
-            // }
-            let effective_gravity = if soft_drop {
-                self.gravity.saturating_sub(self.gravity_decrease).max(1)
-            } else {
-                self.gravity
-            };
-
-            let can_down = self.can_move_down();
-            if can_down && self.time >= effective_gravity {
-                self.curr_pos += Position(0, -1);
-                self.time = 0;
-            } else if !can_down && self.time >= self.lock_delay {
-                // The piece has rested on the ground for `lock_delay` frames.
-                if self.lock_piece()? {
-                    return Ok(());
-                }
+            if self.step(action)?.topped_out {
+                return Ok(());
             }
         }
         Ok(())
+    }
+
+    /// Advances the game by exactly one frame for the given action and return report. 
+    //  For accomodating Multiplayer! 
+    /// A coordinator can `step` several boards in lockstep and react to 
+    // `lines_cleared` / `topped_out` between frames.
+    pub fn step(&mut self, action: TetrisAction) -> Result<StepOutcome, ManagerError> {
+        // if self.movement(action).is_none() {
+        //     for point in self.curr_tetromino.state().0.iter() {
+        //         if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
+        //             // Game Over
+        //             return Ok(());
+        //         }
+        //     }
+        //     self.board.elimination();
+        //     self.bag_randomizer.next();
+        //     self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone());
+        //     self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
+        //     self.time = 0;
+        //     continue;
+        // }
+
+        // (2) Perform the action for this frame. 
+        // Soft (D) lowers gravity & cont; 
+        // Hard (H) moves piece to the floor and returns None.
+        let soft_drop = action == TetrisAction::D;
+        if self.movement(action).is_none() {
+            return self.lock_piece();
+        }
+
+        // (3) Advance gravity / lock delay.
+        self.time += 1;
+
+        // if self.time % self.gravity == 0 {
+        //     // Move 1 step down
+        //     if self.movement(TetrisAction::D).is_none() {
+        //         for point in self.curr_tetromino.state().0.iter() {
+        //             if !self.board.insert(self.curr_pos + point.clone()).unwrap() {
+        //                 return Ok(());
+        //             }
+        //         }
+        //         self.board.elimination();
+        //         self.bag_randomizer.next();
+        //         self.curr_tetromino = Tetromino::new(self.bag_randomizer.cur().clone(), );
+        //         self.curr_pos = Position(((self.board.width - 1) / 2) as isize, (self.board.height - 1) as isize);
+        //         self.time = 0;
+        //     }
+        // }
+
+        let effective_gravity = if soft_drop {
+            self.gravity.saturating_sub(self.gravity_decrease).max(1)
+        } else {
+            self.gravity
+        };
+
+        let can_down = self.can_move_down();
+        if can_down && self.time >= effective_gravity {
+            self.curr_pos += Position(0, -1);
+            self.time = 0;
+        } else if !can_down && self.time >= self.lock_delay {
+            // The piece has rested on the ground for `lock_delay` frames.
+            return self.lock_piece();
+        }
+
+        Ok(StepOutcome::default())
     }
 
     /// True if the current piece can fall one more row without hitting the
@@ -154,7 +173,7 @@ impl GameManager {
     /// Fills the current piece into the board. 
     // `Ok(true)` if the player topped out (game over)
     // Otherwise clears lines, draws the next piece and returns `Ok(false)`.
-    fn lock_piece(&mut self) -> Result<bool, ManagerError> {
+    fn lock_piece(&mut self) -> Result<StepOutcome, ManagerError> {
         let cells: Vec<Position> = self
             .curr_tetromino.state().0.iter()
             .map(|point| self.curr_pos + point.clone())
@@ -171,12 +190,12 @@ impl GameManager {
         }
 
         if topped_out {
-            return Ok(true);
+            return Ok(StepOutcome { topped_out: true, lines_cleared: 0 });
         }
 
-        self.board.elimination();
+        let lines_cleared = self.board.elimination();
         self.spawn_next();
-        Ok(false)
+        Ok(StepOutcome { topped_out: false, lines_cleared })
     }
 
     /// Draws the next tetromino from the bag and resets it to the spawn state.
