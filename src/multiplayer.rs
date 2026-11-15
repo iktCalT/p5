@@ -8,6 +8,7 @@ use crate::bag_randomizer::BagRandomizer;
 use crate::board::Board;
 use crate::bot::GarbageLine;
 use crate::manager::GameManager;
+use crate::setting::SETTINGS;
 use crate::tetromino::{TetrisAction, TetrominoType};
 
 /// Config shared by both players
@@ -58,15 +59,7 @@ impl MultiplayerManager {
         // To satisfy `GameManager::new`.
         let (_tx, rx) = channel::<TetrisAction>();
         let board = Board::new(cfg.width, cfg.height);
-        let bag = vec![
-            TetrominoType::I,
-            TetrominoType::J,
-            TetrominoType::L,
-            TetrominoType::O,
-            TetrominoType::S,
-            TetrominoType::T,
-            TetrominoType::Z,
-        ];
+        let bag = SETTINGS.bag();
         let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), cfg.seed);
         let game = GameManager::new(
             cfg.gravity,

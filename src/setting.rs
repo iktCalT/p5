@@ -8,12 +8,25 @@ pub static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
 
 // Read settings from json files
 pub struct Settings {
+    bag: Vec<TetrominoType>,
     states: HashMap<TetrominoType, (Vec<TetrominoState>, WallKick)>,
     wall_kicks: HashMap<WallKick, Vec<Vec<Position>>>,
 }
 
 impl Settings {
     pub fn new(resources_dir: PathBuf) -> Self {
+        // bag
+        let mut bag = vec![
+            TetrominoType::I, 
+            TetrominoType::J, 
+            TetrominoType::L, 
+            TetrominoType::O, 
+            TetrominoType::S, 
+            TetrominoType::T, 
+            TetrominoType::Z
+        ];
+        bag.sort(); // make sure in ascending order
+
         // Parse tetrominoes.json
         let tetrominoes_path = fs::read_to_string(resources_dir.join("tetrominoes.json")).expect("tetrominoes.json doesn't exist");
         let tetrominoes: serde_json::Value = serde_json::from_str(&tetrominoes_path).expect("Failed to parse tetrominoes.json");
@@ -67,9 +80,16 @@ impl Settings {
         }
 
         Self {
+            bag,
             states,
             wall_kicks
         }
+    }
+
+    pub fn bag(&self) -> Vec<TetrominoType> {
+        // Return a copy of bag, because 
+        // BagRandomizer needs to consume a bag
+        self.bag.clone()
     }
 
     pub fn state<'a>(&'a self, ttype: &TetrominoType, rotation: &Rotation) -> &'a TetrominoState {
