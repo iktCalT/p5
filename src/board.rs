@@ -43,9 +43,7 @@ impl Board {
     }
 
     pub fn print(&self) {
-        for row in self.grid.iter().rev() {
-            println!("{:?}", row.clone());
-        }
+        println!("{}", self.as_string())
     }
 
     /// Is is an expensive function, only used for debugging
@@ -66,18 +64,19 @@ impl Board {
     }
 
     /// Is is an expensive function, only used for debugging
-    pub fn as_string(&self, tetromino: &Tetromino, position: &Position) -> String {
+    pub fn as_string_with_tetromino(&self, tetromino: &Tetromino, position: &Position) -> String {
         let mut copy = self.clone();
         for point in tetromino.state().0.iter() {
-            // Overlay the falling piece directly instead of going through
-            // `insert`
             if let Some(cell) = copy.get_mut(*position + point.clone()) {
                 *cell = CellState::Filled;
             }
         }
-        
+        copy.as_string()
+    }
+
+    pub fn as_string(&self) -> String {
         let mut string = String::new();
-        for row in copy.grid.iter().rev() {
+        for row in self.grid.iter().rev() {
             let s: String = row.iter().map(|s| Into::<char>::into(s)).collect();
             string.insert_str(string.len(), s.as_str());
             string.insert(string.len(), b'\n' as char);
