@@ -30,6 +30,9 @@
   new pieces to the board despite the user topping out.
 - Clean up design doc section formatting.
 
+2026-11-13
+- Fix typos in garbage spec.
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
@@ -618,10 +621,12 @@ The sequence occurs after a game tick and is as follows:
 3. Let s1 = max(l1 - 1, 0), s2 = max(l2 - 1, 0)
 4. Player 2's queue gets max(s1 - g1, 0) new pieces of garbage tagged with timer
   "garbage_queue_time" from `config.json` and the oldest min(s1, g1) pieces of
-  pending garbage, not including newly added garbage this tick, is removed.
-5. Player 1's queue gets max(s2 - g1, 0) new pieces of garbage tagged with timer
+  pending garbage, not including newly added garbage this tick, are removed from
+  Player 1's queue.
+5. Player 1's queue gets max(s2 - g2, 0) new pieces of garbage tagged with timer
   "garbage_queue_time" from `config.json` and the oldest min(s2, g2) pieces of
-  pending garbage, not including the newly added garbage this tick, is removed.
+  pending garbage, not including the newly added garbage this tick, are removed
+  from Player 2's queue..
 6. All garbage in each player's queue tagged with timer equal to 0 has that
   garbage removed from the queue and applied to the bottom that player's board,
   moving all other rows upwards.
