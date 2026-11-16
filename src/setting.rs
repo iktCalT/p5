@@ -1,9 +1,17 @@
-use std::{collections::HashMap, fs, path::PathBuf, sync::LazyLock};
+use std::{collections::HashMap, fs, path::PathBuf, sync::LazyLock, sync::OnceLock};
 
 use crate::tetromino::{Position, Rotation, TetrominoState, TetrominoType, WallKick};
 
+
+static RESOURCES_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+pub fn set_resources_dir(dir: PathBuf) {
+    let _ = RESOURCES_DIR.set(dir);
+}
+
+
 pub static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
-    Settings::new(PathBuf::from("resources"))
+    Settings::new(RESOURCES_DIR.get().cloned().unwrap_or_else(||PathBuf::from("resources")))
 });
 
 // Read settings from json files
