@@ -1,14 +1,36 @@
+use std::fmt::{Display, Write};
+
 use crate::{manager::ManagerError, tetromino::{Position, Tetromino}};
 
 /// Number of extra rows above the playfield used as a spawn buffer.
 pub const SPAWN_BUFFER: usize = 2;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CellState {
+    Filled, Empty
+}
+
+impl Into<char> for &CellState {
+    fn into(self) -> char {
+        match self {
+            CellState::Empty => '.',
+            CellState::Filled => 'o'
+        }
+    }
+}
+
+impl Display for CellState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char(self.into())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Board {
     pub width: usize,
     /// Height of the playing field. Rows at or above this are the spawn buffer.
     pub height: usize,
-    grid: Vec<Vec<u8>>,
+    grid: Vec<Vec<CellState>>,
 }
 
 impl Board {
@@ -16,13 +38,13 @@ impl Board {
         Self {
             width,
             height,
-            grid: vec![vec![b'.'; width]; height + SPAWN_BUFFER]
+            grid: vec![vec![CellState::Empty; width]; height + SPAWN_BUFFER]
         }
     }
 
     pub fn print(&self) {
         for row in self.grid.iter().rev() {
-            println!("{}", String::from_utf8(row.clone()).expect("Error row"));
+            println!("{:?}", row.clone());
         }
     }
 
@@ -37,7 +59,7 @@ impl Board {
             // topped out). Writing the cell directly draws the buffer rows and
             // is idempotent.
             if let Some(cell) = copy.get_mut(*position + point.clone()) {
-                *cell = b'o';
+                *cell = CellState::Filled;
             }
         }
         copy.print();
@@ -50,19 +72,20 @@ impl Board {
             // Overlay the falling piece directly instead of going through
             // `insert`
             if let Some(cell) = copy.get_mut(*position + point.clone()) {
-                *cell = b'o';
+                *cell = CellState::Filled;
             }
         }
         
         let mut string = String::new();
         for row in copy.grid.iter().rev() {
-            string.insert_str(string.len(), str::from_utf8(&row).expect("Error row"));
+            let s: String = row.iter().map(|s| Into::<char>::into(s)).collect();
+            string.insert_str(string.len(), s.as_str());
             string.insert(string.len(), b'\n' as char);
         }
         string
     }
 
-    fn get(&self, position: Position) -> Option<&u8> {
+    fn get(&self, position: Position) -> Option<&CellState> {
         if position.0 < 0 || position.1 < 0 {
             return None;
         }
@@ -72,7 +95,7 @@ impl Board {
         row.get(position.0 as usize)
     }
 
-    fn get_mut(&mut self, position: Position) -> Option<&mut u8> {
+    fn get_mut(&mut self, position: Position) -> Option<&mut CellState> {
         let Some(row) = self.grid.get_mut(position.1 as usize) else {
             return None;
         };
@@ -88,18 +111,18 @@ impl Board {
         let Some(pos) = self.get(*position) else {
             return false;
         };
-        *pos == b'.'
+        *pos == CellState::Empty
     }
 
     /// Removes every filled row and return # rows cleared.
     pub fn elimination(&mut self) -> usize {
         // Restore against the grid length (height + SPAWN_BUFFER = 22), not playing field length
         let rows_before = self.grid.len();
-        self.grid.retain(|row| row.iter().any(|point| point == &b'.'));
+        self.grid.retain(|row| row.iter().any(|point| *point == CellState::Empty));
         // let eliminated = self.height - self.grid.len();
         let eliminated = rows_before - self.grid.len();
         for _ in 0..eliminated {
-            self.grid.push(vec![b'.'; self.width]);
+            self.grid.push(vec![CellState::Empty; self.width]);
         }
         eliminated
     }
@@ -108,9 +131,9 @@ impl Board {
     pub fn add_garbage_row(&mut self, hole_col: usize) {
         // Drop the top row, then push a new bottom row in.
         self.grid.pop();
-        let mut row = vec![b'o'; self.width];
+        let mut row = vec![CellState::Filled; self.width];
         if hole_col < self.width {
-            row[hole_col] = b'.';
+            row[hole_col] = CellState::Empty;
         }
         self.grid.insert(0, row);
     }
@@ -122,7 +145,7 @@ impl Board {
         self.grid
             .iter()
             .skip(self.height)
-            .any(|row| row.iter().any(|cell| *cell == b'o'))
+            .any(|row| row.iter().any(|cell| *cell == CellState::Filled))
     }
 
     /// Marks the cell at `position` as Filled. 
@@ -137,10 +160,10 @@ impl Board {
         let Some(pos) = self.get_mut(position) else {
             return Err(ManagerError::PositionNotOnBoard);
         };
-        if *pos == b'o' {
+        if *pos == CellState::Filled {
             return Err(ManagerError::InsertIntoOccupiedPosition);
         }
-        *pos = b'o';
+        *pos = CellState::Filled;
         Ok(true)
     }
 
@@ -148,10 +171,10 @@ impl Board {
         let Some(pos) = self.get_mut(position) else {
             return Err(ManagerError::PositionNotOnBoard);
         };
-        if *pos == b'.' {
+        if *pos == CellState::Empty {
             return Err(ManagerError::RemoveFromEmptyPosition);
         }
-        *pos = b'.';
+        *pos = CellState::Empty;
         Ok(())
     }
 }
