@@ -44,7 +44,7 @@ pub enum TetrisAction {
     S
 }
 
-impl Into<TetrisAction> for u8 {
+impl Into<TetrisAction> for &u8 {
     fn into(self) -> TetrisAction {
         match self.to_ascii_lowercase() {
             b'c' => TetrisAction::C,
@@ -55,6 +55,22 @@ impl Into<TetrisAction> for u8 {
             b'h' => TetrisAction::H,
             b'e' => TetrisAction::E,
             b'q' => TetrisAction::Q,
+            _ => panic!("Invalid input command")
+        }
+    }
+}
+
+impl Into<TetrisAction> for char {
+    fn into(self) -> TetrisAction {
+        match self.to_ascii_lowercase() {
+            'c' => TetrisAction::C,
+            'w' => TetrisAction::W,
+            'l' => TetrisAction::L,
+            'r' => TetrisAction::R,
+            'd' => TetrisAction::D,
+            'h' => TetrisAction::H,
+            'e' => TetrisAction::E,
+            'q' => TetrisAction::Q,
             _ => panic!("Invalid input command")
         }
     }

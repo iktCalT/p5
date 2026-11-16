@@ -4,7 +4,7 @@ use p5_tetris::{setting::{SETTINGS, Settings}, tetromino::{Position, Rotation, T
 
 #[test]
 fn settings_states_test() {
-    println!("States: {:#?}", SETTINGS._states());
+    println!("States: {:#?}", SETTINGS.__states());
     let L_state_right = TetrominoState(
         vec![
             Position( 0,  1), 
@@ -18,7 +18,7 @@ fn settings_states_test() {
 
 #[test]
 fn settings_wall_kicks_test() {
-    println!("States: {:#?}", SETTINGS._wall_kicks());
+    println!("States: {:#?}", SETTINGS.__wall_kicks());
     let Normal_wall_kick_right = vec!(
         Position( 0,  0), 
         Position( 1,  0), 

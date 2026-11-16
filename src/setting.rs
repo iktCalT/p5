@@ -16,6 +16,13 @@ pub static SETTINGS: LazyLock<Settings> = LazyLock::new(|| {
 
 // Read settings from json files
 pub struct Settings {
+    pub width: usize,
+    pub height: usize,
+    pub gravity: u64,
+    pub gravity_decrease: u64,
+    pub lock_delay: u64,
+    pub seed: [u8; 16],
+    pub garbage_queue_time: usize,
     bag: Vec<TetrominoType>,
     states: HashMap<TetrominoType, (Vec<TetrominoState>, WallKick)>,
     wall_kicks: HashMap<WallKick, Vec<Vec<Position>>>,
@@ -34,6 +41,28 @@ impl Settings {
             TetrominoType::Z
         ];
         bag.sort(); // make sure in ascending order
+
+        // Parse config.json
+        let config_path = fs::read_to_string(resources_dir.join("config.json")).expect("config.json doesn't exist");
+        let config: serde_json::Value = serde_json::from_str(&config_path).expect("Failed to parse config.json");
+
+        let width = config["width"].as_u64().unwrap_or(10) as usize;
+        let height = config["height"].as_u64().unwrap_or(20) as usize;
+        let gravity = config["gravity"].as_u64().unwrap_or(20);
+        let gravity_decrease = config["gravity_decrease"].as_u64().unwrap_or(10);
+        let lock_delay = config["lock_delay"].as_u64().unwrap_or(15);
+        let garbage_queue_time = config["garbage_queue_time"].as_u64().unwrap_or(10) as usize;
+
+        let mut seed = [0u8; 16];
+        for (i, v) in config["random_seed"]
+            .as_array()
+            .expect("Missing random_seed in config.json")
+            .iter()
+            .take(16)
+            .enumerate()
+        {
+            seed[i] = v.as_u64().expect("Invalid byte in random_seed") as u8;
+        }
 
         // Parse tetrominoes.json
         let tetrominoes_path = fs::read_to_string(resources_dir.join("tetrominoes.json")).expect("tetrominoes.json doesn't exist");
@@ -88,9 +117,16 @@ impl Settings {
         }
 
         Self {
-            bag,
-            states,
-            wall_kicks
+            width, 
+            height, 
+            gravity, 
+            gravity_decrease, 
+            lock_delay, 
+            garbage_queue_time,
+            seed, 
+            bag, 
+            states, 
+            wall_kicks 
         }
     }
 
@@ -109,12 +145,12 @@ impl Settings {
     }
 
     /// For debugging
-    pub fn _states<'a>(&'a self) -> &'a HashMap<TetrominoType, (Vec<TetrominoState>, WallKick)> {
+    pub fn __states<'a>(&'a self) -> &'a HashMap<TetrominoType, (Vec<TetrominoState>, WallKick)> {
         &self.states
     }
 
     /// For debugging
-    pub fn _wall_kicks<'a>(&'a self) -> &'a HashMap<WallKick, Vec<Vec<Position>>> {
+    pub fn __wall_kicks<'a>(&'a self) -> &'a HashMap<WallKick, Vec<Vec<Position>>> {
         &self.wall_kicks
     }
 }

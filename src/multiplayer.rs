@@ -12,17 +12,17 @@ use crate::setting::SETTINGS;
 use crate::tetromino::{TetrisAction, TetrominoType};
 
 /// Config shared by both players
-#[derive(Debug, Clone, Copy)]
-pub struct GameConfig {
-    pub width: usize,
-    pub height: usize,
-    pub gravity: u64,
-    pub gravity_decrease: u64,
-    pub lock_delay: u64,
-    /// Number of ticks a sent garbage block waits
-    pub garbage_queue_time: usize,
-    pub seed: [u8; 16],
-}
+// #[derive(Debug, Clone, Copy)]
+// pub struct GameConfig {
+//     pub width: usize,
+//     pub height: usize,
+//     pub gravity: u64,
+//     pub gravity_decrease: u64,
+//     pub lock_delay: u64,
+//     /// Number of ticks a sent garbage block waits
+//     pub garbage_queue_time: usize,
+//     pub seed: [u8; 16],
+// }
 
 pub struct Player {
     pub game: GameManager,
@@ -48,23 +48,23 @@ pub struct MultiplayerManager {
 }
 
 impl MultiplayerManager {
-    pub fn new(cfg: &GameConfig) -> Self {
+    pub fn new() -> Self {
         Self {
-            players: [Self::make_player(cfg), Self::make_player(cfg)],
-            garbage_queue_time: cfg.garbage_queue_time,
+            players: [Self::make_player(), Self::make_player()],
+            garbage_queue_time: SETTINGS.garbage_queue_time,
         }
     }
 
-    fn make_player(cfg: &GameConfig) -> Player {
+    fn make_player() -> Player {
         // To satisfy `GameManager::new`.
         let (_tx, rx) = channel::<TetrisAction>();
-        let board = Board::new(cfg.width, cfg.height);
+        let board = Board::new(SETTINGS.width, SETTINGS.height);
         let bag = SETTINGS.bag();
-        let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), cfg.seed);
+        let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), SETTINGS.seed);
         let game = GameManager::new(
-            cfg.gravity,
-            cfg.gravity_decrease,
-            cfg.lock_delay,
+            SETTINGS.gravity,
+            SETTINGS.gravity_decrease,
+            SETTINGS.lock_delay,
             rx,
             board,
             bag_randomizer,
@@ -72,7 +72,7 @@ impl MultiplayerManager {
         Player {
             game,
             garbage_queue: VecDeque::new(),
-            garbage_rng: Xoshiro128PlusPlus::from_seed(cfg.seed),
+            garbage_rng: Xoshiro128PlusPlus::from_seed(SETTINGS.seed),
             topped_out: false,
         }
     }

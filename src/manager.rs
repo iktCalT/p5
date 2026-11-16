@@ -1,6 +1,6 @@
 use std::sync::mpsc::Receiver;
 
-use crate::board::Board;
+use crate::board::{Board, CellState};
 use crate::setting::SETTINGS;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
@@ -82,7 +82,7 @@ impl GameManager {
     }
 
     pub fn show_as_string(&self) -> String {
-        self.board.as_string(&self.curr_tetromino, &self.curr_pos)
+        self.board.as_string_with_tetromino(&self.curr_tetromino, &self.curr_pos)
     }
 
     pub fn run(&mut self) -> Result<(), ManagerError> {
