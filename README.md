@@ -429,54 +429,39 @@ For this part, you will implement a bot to play single player Tetris. First,
 for grading reasons you should create the following enums, structs, and trait
 as follows to module `bot` in a file `src/bot.rs`:
 ```rs
-pub enum TetrominoType {
-    I, J, L, O, S, Z, T
-}
-
+#[derive(Debug, Clone, Copy)]
 pub enum TetrisAction {
     C, W, L, R, D, H, E
 }
 
-#[derive(Clone, Copy)]
-pub enum CellState {
-    Filled, Empty
-}
-
-pub struct BoardState {
-    pub tetromino_row: usize,
-    pub tetromino_col: usize,
-    pub tetromino_rotation: usize,
-    pub tetromino: TetrominoType,
-    pub board: [[CellState; 10]; 20],
-}
-
 pub trait SinglePlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
+    fn get_move(&self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// If the bot is playing, this will likely be the result of
+    /// `bot.get_move()`.
+    fn update_with(&mut self, action: TetrisAction);
 }
 ```
 
 Now, add the following unit test to `tests.rs` in your `tests` directory where
 `SinglePlayerBot` is your bot struct implementing `Bot`. It should compile.
 ```rs
-use p5_tetris::bot::{BoardState, Bot, CellState, TetrominoType};
+use p5_tetris::bot::SinglePlayerBot;
 
 pub type MySinglePlayerBot = /* TODO: Replace this comment with your bot! */;
 
 #[test]
 fn create_bot_and_get_any_action_test() {
-    let mut bot = MySinglePlayerBot::new();
-    let _ = bot.get_move(&BoardState {
-        tetromino_row: 20,
-        tetromino_col: 4,
-        tetromino_rotation: 0,
-        tetromino: TetrominoType::J,
-        board: [[CellState::Empty; 10]; 20],
-    });
+    let config_path: PathBuf = "resources".into();
+    let mut bot = SinglePlayerBot::new(&config_path);
+    let m = bot.get_move();
+    bot.update_with(m);
 }
 ```
 
@@ -651,28 +636,22 @@ aligned garbage. The randomizers should be seeded with the random seed from
 `config.json`.
 
 ### Multiplayer Tetris Bots
-Multiplayer bots look similar to single player bots but take in the board state
-of both players as well as the garbage state of both players. Thus, they require
-a new interface. Add the following to your `bots` module (in `bot.rs`):
+Multiplayer bots look similar to single player bots but take in inputs from all
+players when updating their internal view of the game state. Thus, they require
+a new interface. Add the following to your `bots` module (in `src/bot.rs`):
 ```rs
-pub struct GarbageLine {
-    pub num_rows_to_create: usize,
-    pub ticks_till_applied: usize,
-}
-
 pub trait MultiPlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(
-        &mut self,
-        p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction;
+    fn get_move(&self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// `p_actions[i]` is the action taken by player `i`. This should be called
+    /// every frame.
+    fn update_with(&mut self, p_actions: &[TetrisAction]);
 }
 ```
 
@@ -684,15 +663,10 @@ pub type MyMultiPlayerBot = /* TODO: Replace this comment with your bot! */;
 
 #[test]
 fn create_mut_bot_and_get_any_action_test() {
-    let mut bot = MyMultiPlayerBot::new();
-    let state = &BoardState {
-        tetromino_row: 20,
-        tetromino_col: 4,
-        tetromino_rotation: 0,
-        tetromino: TetrominoType::J,
-        board: [[CellState::Empty; 10]; 20],
-    };
-    let _ = bot.get_move(&state, &[], &state, &[]);
+    let config_path: PathBuf = "resources".into();
+    let mut bot = MyMultiPlayerBot::new(&config_path);
+    let m = bot.get_move();
+    bot.update_with(&[m, p5_tetris::bot::TetrisAction::E]);
 }
 ```
 
