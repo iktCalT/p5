@@ -5,6 +5,7 @@ use std::sync::{
 };
 use std::thread::{self, JoinHandle};
 
+use crate::bot::CellState::Filled;
 use crate::setting::SETTINGS;
 use crate::tetromino::{self, Position, Rotation};
 
@@ -92,6 +93,7 @@ pub trait SinglePlayerBot {
     /// every frame.
     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
 }
+
 pub use SinglePlayerBot as Bot;
 /**
  * SPMC queue for main thread queuing jobs to consumer threads to simulate and eval
@@ -124,7 +126,8 @@ impl SimulatorBot {
             0 => Rotation::Origin,
             1 => Rotation::Right,
             2 => Rotation::Inverse,
-            _ => Rotation::Left,
+            3 => Rotation::Left,
+            _ => panic!()
         }
     }
 
@@ -222,6 +225,7 @@ impl SimulatorBot {
     fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> i32 {
         // tunable params
         let A1 = 10;
+        let A2 = 20;
 
         let old_peak: isize = (0..HEIGHT)
             .rev()
@@ -231,7 +235,17 @@ impl SimulatorBot {
         let mut score: i32 = 0;
         for &(_, row) in landed {
             if (row as isize) <= old_peak {
-                score += A1;
+                let diff = old_peak - row as isize + 1;
+                score += A1 * (diff * diff) as i32;
+            }
+        }
+
+        
+        for (col, row) in landed {
+            let mut cur_row = *row as isize - 1;
+            while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
+                cur_row = cur_row - 1;
+                score -= A2;
             }
         }
 

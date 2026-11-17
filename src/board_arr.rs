@@ -1,9 +1,6 @@
 use std::fmt::{Display, Write};
 
-use crate::{board::CellState, bot::{HEIGHT, WIDTH}, manager::ManagerError, tetromino::{self, Position, Tetromino}};
-
-/// Number of extra rows above the playfield used as a spawn buffer.
-pub const SPAWN_BUFFER: usize = 2;
+use crate::{board::{CellState, SPAWN_BUFFER}, bot::{HEIGHT, WIDTH}, manager::ManagerError, tetromino::{self, Position, Tetromino}};
 
 #[derive(Debug, Clone)]
 pub struct BoardArr<'a> (

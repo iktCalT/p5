@@ -58,6 +58,7 @@ impl MultiplayerManager {
     fn make_player() -> Player {
         // To satisfy `GameManager::new`.
         let (_tx, rx) = channel::<TetrisAction>();
+        let (tx_outcome, rx_outcome) = channel();
         let board = Board::new(SETTINGS.width, SETTINGS.height);
         let bag = SETTINGS.bag();
         let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), SETTINGS.seed);
@@ -66,6 +67,7 @@ impl MultiplayerManager {
             SETTINGS.gravity_decrease,
             SETTINGS.lock_delay,
             rx,
+            tx_outcome,
             board,
             bag_randomizer,
         );

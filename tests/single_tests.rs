@@ -26,12 +26,13 @@ fn single_player_batch_test() {
         let bag = SETTINGS.bag();
 
         let (tx, rx) = channel::<TetrisAction>();
+        let (tx_outcome, rx_outcome) = channel();
 
         let seed: [u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
         let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
         let board = Board::new(10, 20);
 
-        let mut manager = GameManager::new(20, 10, 15, rx, board, bag_randomizer);
+        let mut manager = GameManager::new(20, 10, 15, rx, tx_outcome, board, bag_randomizer);
 
         println!("Current file: {:?}", input_path.file_name());
         let handle = std::thread::spawn(move || {
