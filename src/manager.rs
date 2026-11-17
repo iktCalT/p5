@@ -52,7 +52,7 @@ impl GameManager {
         let curr_tetromino = Tetromino::new(*bag_randomizer.cur());
         // The first piece is now in play, so move past it in the bag.
         bag_randomizer.next();
-        
+
         Self {
             rx,
             time: 0,
@@ -78,11 +78,13 @@ impl GameManager {
 
     /// Only for debugging
     pub fn show_with_tetromino(&self) {
-        self.board.print_with_tetromino(&self.curr_tetromino, &self.curr_pos);
+        self.board
+            .print_with_tetromino(&self.curr_tetromino, &self.curr_pos);
     }
 
     pub fn show_as_string(&self) -> String {
-        self.board.as_string_with_tetromino(&self.curr_tetromino, &self.curr_pos)
+        self.board
+            .as_string_with_tetromino(&self.curr_tetromino, &self.curr_pos)
     }
 
     pub fn run(&mut self) -> Result<(), ManagerError> {
@@ -108,9 +110,9 @@ impl GameManager {
         Ok(())
     }
 
-    /// Advances the game by exactly one frame for the given action and return report. 
-    //  For accomodating Multiplayer! 
-    /// A coordinator can `step` several boards in lockstep and react to 
+    /// Advances the game by exactly one frame for the given action and return report.
+    //  For accomodating Multiplayer!
+    /// A coordinator can `step` several boards in lockstep and react to
     // `lines_cleared` / `topped_out` between frames.
     pub fn step(&mut self, action: TetrisAction) -> Result<StepOutcome, ManagerError> {
         // if self.movement(action).is_none() {
@@ -128,8 +130,8 @@ impl GameManager {
         //     continue;
         // }
 
-        // (2) Perform the action for this frame. 
-        // Soft (D) lowers gravity & cont; 
+        // (2) Perform the action for this frame.
+        // Soft (D) lowers gravity & cont;
         // Hard (H) moves piece to the floor and returns None.
         let soft_drop = action == TetrisAction::D;
         if self.movement(action).is_none() {
@@ -178,13 +180,15 @@ impl GameManager {
     fn can_move_down(&self) -> bool {
         self.is_valid_state(self.curr_tetromino.state(), Position(0, -1))
     }
-
-    /// Fills the current piece into the board. 
+    /// Fills the current piece into the board.
     // `Ok(true)` if the player topped out (game over)
     // Otherwise clears lines, draws the next piece and returns `Ok(false)`.
     fn lock_piece(&mut self) -> Result<StepOutcome, ManagerError> {
         let cells: Vec<Position> = self
-            .curr_tetromino.state().0.iter()
+            .curr_tetromino
+            .state()
+            .0
+            .iter()
             .map(|point| self.curr_pos + point.clone())
             .collect();
 
@@ -199,12 +203,18 @@ impl GameManager {
         }
 
         if topped_out {
-            return Ok(StepOutcome { topped_out: true, lines_cleared: 0 });
+            return Ok(StepOutcome {
+                topped_out: true,
+                lines_cleared: 0,
+            });
         }
 
         let lines_cleared = self.board.elimination();
         self.spawn_next();
-        Ok(StepOutcome { topped_out: false, lines_cleared })
+        Ok(StepOutcome {
+            topped_out: false,
+            lines_cleared,
+        })
     }
 
     /// Draws the next tetromino from the bag and resets it to the spawn state.
@@ -232,7 +242,10 @@ impl GameManager {
     pub fn movement(&mut self, action: TetrisAction) -> Option<bool> {
         match action {
             TetrisAction::C => {
-                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.clockwise());
+                let offsets = SETTINGS.wall_kick(
+                    &self.curr_tetromino.ttype,
+                    &self.curr_tetromino.rotation.clockwise(),
+                );
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
@@ -245,9 +258,12 @@ impl GameManager {
                     }
                 }
                 Some(false)
-            },
+            }
             TetrisAction::W => {
-                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.counter_clockwise());
+                let offsets = SETTINGS.wall_kick(
+                    &self.curr_tetromino.ttype,
+                    &self.curr_tetromino.rotation.counter_clockwise(),
+                );
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
@@ -260,13 +276,13 @@ impl GameManager {
                     }
                 }
                 Some(false)
-            },
+            }
             TetrisAction::D => {
                 // Soft drop shouldn't make the piece move down directly; it only
-                // lowers gravity for this frame (in run function!). 
+                // lowers gravity for this frame (in run function!).
                 // Old impl made D into an instant 1-row drop.
                 Some(true)
-            },
+            }
             TetrisAction::L => {
                 let offset = Position(-1, 0);
                 if self.is_valid_state(&self.curr_tetromino.state(), offset) {
@@ -274,7 +290,7 @@ impl GameManager {
                     return Some(true);
                 }
                 Some(false)
-            },
+            }
             TetrisAction::R => {
                 let offset = Position(1, 0);
 
@@ -283,7 +299,7 @@ impl GameManager {
                     return Some(true);
                 }
                 Some(false)
-            },
+            }
             TetrisAction::E => Some(true),
             TetrisAction::H => {
                 let mut offset = Position(0, -1);
@@ -292,9 +308,36 @@ impl GameManager {
                 }
                 self.curr_pos += offset + Position(0, 1);
                 None
-            },
+            }
             TetrisAction::S => panic!(),
-            TetrisAction::Q => panic!()
+            TetrisAction::Q => panic!(),
+        }
+    }
+
+    pub fn to_board_state(&self) -> crate::bot::BoardState {
+        let mut grid = [[crate::bot::CellState::Empty; 10]; 20];
+        for r in 0..20.min(self.board.height) {
+            for c in 0..10.min(self.board.width) {
+                if !self.board.is_empty(&Position(c as isize, r as isize)) {
+                    grid[r][c] = crate::bot::CellState::Filled;
+                }
+            }
+        }
+        let tetromino = match self.curr_tetromino.ttype {
+            TetrominoType::I => crate::bot::TetrominoType::I,
+            TetrominoType::J => crate::bot::TetrominoType::J,
+            TetrominoType::L => crate::bot::TetrominoType::L,
+            TetrominoType::O => crate::bot::TetrominoType::O,
+            TetrominoType::S => crate::bot::TetrominoType::S,
+            TetrominoType::T => crate::bot::TetrominoType::T,
+            TetrominoType::Z => crate::bot::TetrominoType::Z,
+        };
+        crate::bot::BoardState {
+            tetromino_row: self.curr_pos.1 as usize,
+            tetromino_col: self.curr_pos.0 as usize,
+            tetromino_rotation: self.curr_tetromino.rotation as usize,
+            tetromino,
+            board: grid,
         }
     }
 }

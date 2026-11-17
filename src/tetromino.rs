@@ -4,7 +4,13 @@ use crate::{manager::ManagerError, setting::SETTINGS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum TetrominoType {
-    I, J, L, O, S, T, Z
+    I,
+    J,
+    L,
+    O,
+    S,
+    T,
+    Z,
 }
 
 impl Into<TetrominoType> for &str {
@@ -17,7 +23,7 @@ impl Into<TetrominoType> for &str {
             "s" => TetrominoType::S,
             "t" => TetrominoType::T,
             "z" => TetrominoType::Z,
-            _ => panic!("Cannot convert {} into TetrominoType", self)
+            _ => panic!("Cannot convert {} into TetrominoType", self),
         }
     }
 }
@@ -25,23 +31,23 @@ impl Into<TetrominoType> for &str {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TetrisAction {
     /// Rotate 90 degrees clockwise
-    C, 
+    C,
     /// Rotate 90 degrees counter-clockwise
-    W, 
+    W,
     /// Move piece left
-    L, 
+    L,
     /// Move piece right
-    R, 
+    R,
     /// Move piece down
-    D, 
+    D,
     /// Hard drop piece
-    H, 
+    H,
     /// No action
-    E, 
+    E,
     /// Quit game
     Q,
     /// Show board (for debugging)
-    S
+    S,
 }
 
 impl Into<TetrisAction> for &u8 {
@@ -55,7 +61,7 @@ impl Into<TetrisAction> for &u8 {
             b'h' => TetrisAction::H,
             b'e' => TetrisAction::E,
             b'q' => TetrisAction::Q,
-            _ => panic!("Invalid input command")
+            _ => panic!("Invalid input command"),
         }
     }
 }
@@ -71,7 +77,7 @@ impl Into<TetrisAction> for char {
             'h' => TetrisAction::H,
             'e' => TetrisAction::E,
             'q' => TetrisAction::Q,
-            _ => panic!("Invalid input command")
+            _ => panic!("Invalid input command"),
         }
     }
 }
@@ -79,7 +85,10 @@ impl Into<TetrisAction> for char {
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum Rotation {
-    Origin=0, Right, Inverse, Left
+    Origin = 0,
+    Right = 1,
+    Inverse = 2,
+    Left = 3,
 }
 
 impl Rotation {
@@ -88,7 +97,7 @@ impl Rotation {
             Rotation::Origin => Rotation::Right,
             Rotation::Right => Rotation::Inverse,
             Rotation::Inverse => Rotation::Left,
-            Rotation::Left => Rotation::Origin
+            Rotation::Left => Rotation::Origin,
         }
     }
 
@@ -97,14 +106,16 @@ impl Rotation {
             Rotation::Origin => Rotation::Left,
             Rotation::Right => Rotation::Origin,
             Rotation::Inverse => Rotation::Right,
-            Rotation::Left => Rotation::Inverse
+            Rotation::Left => Rotation::Inverse,
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum WallKick {
-    Normal, I, O
+    Normal,
+    I,
+    O,
 }
 
 impl Into<WallKick> for &str {
@@ -113,7 +124,7 @@ impl Into<WallKick> for &str {
             "Normal" => WallKick::Normal,
             "I" => WallKick::I,
             "O" => WallKick::O,
-            _ => panic!("Cannot convert {} into WallKick", self)
+            _ => panic!("Cannot convert {} into WallKick", self),
         }
     }
 }
@@ -124,10 +135,7 @@ pub struct Position(pub isize, pub isize);
 impl Add<Self> for Position {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Position(
-            self.0 + rhs.0,
-            self.1 + rhs.1
-        )
+        Position(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 
@@ -150,7 +158,7 @@ impl Tetromino {
     pub fn new(ttype: TetrominoType) -> Self {
         Self {
             ttype,
-            rotation: Rotation::Origin
+            rotation: Rotation::Origin,
         }
     }
 
@@ -163,7 +171,7 @@ impl Tetromino {
         match action {
             TetrisAction::C => Ok(SETTINGS.state(&self.ttype, &self.rotation.clockwise())),
             TetrisAction::W => Ok(SETTINGS.state(&self.ttype, &self.rotation.counter_clockwise())),
-            _ => Err(ManagerError::ActionError)
+            _ => Err(ManagerError::ActionError),
         }
     }
 
@@ -171,9 +179,13 @@ impl Tetromino {
         match action {
             TetrisAction::C => self.rotation = self.rotation.clockwise(),
             TetrisAction::W => self.rotation = self.rotation.counter_clockwise(),
-            TetrisAction::L | TetrisAction::R | TetrisAction::D | 
-            TetrisAction::H | TetrisAction::E | TetrisAction::Q | 
-            TetrisAction::S => return Err(ManagerError::ActionError)
+            TetrisAction::L
+            | TetrisAction::R
+            | TetrisAction::D
+            | TetrisAction::H
+            | TetrisAction::E
+            | TetrisAction::Q
+            | TetrisAction::S => return Err(ManagerError::ActionError),
         };
         Ok(())
     }

@@ -1,13 +1,15 @@
-use std::iter::zip;
-use std::sync::mpsc::channel;
 use std::env;
 use std::fs;
+use std::iter::zip;
 use std::path::PathBuf;
+use std::sync::mpsc::channel;
 
 use p5_tetris::multiplayer::MultiplayerManager;
 use p5_tetris::setting::SETTINGS;
 use p5_tetris::setting::set_resources_dir;
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::TetrisAction};
+use p5_tetris::{
+    bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::TetrisAction,
+};
 
 // #[derive(Default, Debug)]
 // struct CliArgs {
@@ -67,7 +69,14 @@ fn single_player(input_path: &PathBuf) {
     let bag_randomizer = BagRandomizer::from_parts(SETTINGS.bag().into_iter(), SETTINGS.seed);
     let board = Board::new(SETTINGS.width, SETTINGS.height);
 
-    let mut manager = GameManager::new(SETTINGS.gravity, SETTINGS.gravity_decrease, SETTINGS.lock_delay, rx, board, bag_randomizer);
+    let mut manager = GameManager::new(
+        SETTINGS.gravity,
+        SETTINGS.gravity_decrease,
+        SETTINGS.lock_delay,
+        rx,
+        board,
+        bag_randomizer,
+    );
     let _ = manager.run();
     manager.show_with_tetromino();
 }
@@ -81,8 +90,11 @@ fn multi_player(input_paths: &Vec<PathBuf>) {
 
     let mut mp = MultiplayerManager::new();
 
-    for (c1, c2) in zip(p1_content.chars().filter(|c| !c.is_ascii_whitespace()), p2_content.chars().filter(|c| !c.is_ascii_whitespace())) {
-        mp.tick(c1.into(), c2.into());        
+    for (c1, c2) in zip(
+        p1_content.chars().filter(|c| !c.is_ascii_whitespace()),
+        p2_content.chars().filter(|c| !c.is_ascii_whitespace()),
+    ) {
+        mp.tick(c1.into(), c2.into());
     }
 
     mp.players[0].game.show_with_tetromino();

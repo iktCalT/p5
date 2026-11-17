@@ -16,7 +16,8 @@ use p5_tetris::tetromino::{Position, TetrisAction};
 
 /// Total garbage rows pending in a player's queue (summed across blocks).
 fn rows(mp: &MultiplayerManager, idx: usize) -> usize {
-    mp.players[idx].garbage_queue
+    mp.players[idx]
+        .garbage_queue
         .iter()
         .map(|line| line.num_rows_to_create)
         .sum()
@@ -69,7 +70,11 @@ fn newly_sent_garbage_is_not_immediately_applied() {
     mp.exchange_garbage(4, 0);
     // Timer started at garbage_queue_time and was aged once this tick.
     assert_eq!(
-        mp.players[1].garbage_queue.front().unwrap().ticks_till_applied,
+        mp.players[1]
+            .garbage_queue
+            .front()
+            .unwrap()
+            .ticks_till_applied,
         SETTINGS.garbage_queue_time - 1
     );
     // Nothing has landed on p2's board yet.

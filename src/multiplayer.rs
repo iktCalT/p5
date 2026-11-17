@@ -33,7 +33,7 @@ pub struct Player {
 }
 
 impl Player {
-    /// Add one garbage row to the bottom. 
+    /// Add one garbage row to the bottom.
     // Return true if this pushed a cell to or above row `height` i.e. top out.
     fn apply_garbage_row(&mut self, hole_col: usize) -> bool {
         self.game.board.add_garbage_row(hole_col);
@@ -107,7 +107,7 @@ impl MultiplayerManager {
 
     /// Resolves garbage for one tick
     pub fn exchange_garbage(&mut self, l1: usize, l2: usize) {
-        // Say player 1 has g1 lines of garbage in their queue, and player 2 has 
+        // Say player 1 has g1 lines of garbage in their queue, and player 2 has
         // g2 lines of garbage in their queue.
         let g1 = pending_rows(&self.players[0].garbage_queue);
         let g2 = pending_rows(&self.players[1].garbage_queue);
@@ -117,9 +117,9 @@ impl MultiplayerManager {
         let s1 = l1.saturating_sub(1);
         let s2 = l2.saturating_sub(1);
 
-        // Player 2's queue gets max(s1 - g1, 0) new pieces of garbage tagged with 
-        // timer "garbage_queue_time" from config.json and the oldest min(s1, g1) 
-        // pieces of pending garbage, not including newly added garbage this tick, 
+        // Player 2's queue gets max(s1 - g1, 0) new pieces of garbage tagged with
+        // timer "garbage_queue_time" from config.json and the oldest min(s1, g1)
+        // pieces of pending garbage, not including newly added garbage this tick,
         // is removed.
         let cancel1 = s1.min(g1);
         let send1 = s1 - cancel1;
@@ -131,9 +131,9 @@ impl MultiplayerManager {
             });
         }
 
-        // Player 1's queue gets max(s2 - g1, 0) new pieces of garbage tagged with 
-        // timer "garbage_queue_time" from config.json and the oldest min(s2, g2) 
-        // pieces of pending garbage, not including the newly added garbage this tick, 
+        // Player 1's queue gets max(s2 - g1, 0) new pieces of garbage tagged with
+        // timer "garbage_queue_time" from config.json and the oldest min(s2, g2)
+        // pieces of pending garbage, not including the newly added garbage this tick,
         // is removed.
         let cancel2 = s2.min(g2);
         let send2 = s2 - cancel2;
@@ -145,11 +145,11 @@ impl MultiplayerManager {
             });
         }
 
-        // All garbage in each player's queue tagged with timer equal to 0 has that 
+        // All garbage in each player's queue tagged with timer equal to 0 has that
         // garbage removed from the queue and applied to the bottom that player's board,
         //  moving all other rows upwards.
         // For a player, if any cell is above at or above the 20th row (row index >= 20),
-        //  that player tops out. No further garbage should be applied to topped out 
+        //  that player tops out. No further garbage should be applied to topped out
         // players.
         self.apply_ready_garbage(0);
         self.apply_ready_garbage(1);
