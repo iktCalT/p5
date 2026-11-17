@@ -43,7 +43,7 @@ impl Board {
     }
 
     pub fn print(&self) {
-        println!("{}", self.as_string())
+        print!("{}", self.as_string())
     }
 
     /// Is is an expensive function, only used for debugging

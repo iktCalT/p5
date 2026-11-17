@@ -33,6 +33,9 @@
 2026-11-13
 - Fix typos in garbage spec.
 
+2026-11-16
+- Have garbage applied only after a piece locks.
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
@@ -627,9 +630,10 @@ The sequence occurs after a game tick and is as follows:
   "garbage_queue_time" from `config.json` and the oldest min(s2, g2) pieces of
   pending garbage, not including the newly added garbage this tick, are removed
   from Player 2's queue..
-6. All garbage in each player's queue tagged with timer equal to 0 has that
-  garbage removed from the queue and applied to the bottom that player's board,
-  moving all other rows upwards.
+6. Check if a given player had a piece lock this turn, if so: all garbage in
+  each player's queue tagged with timer equal to 0 has that garbage removed from
+  the queue and applied to the bottom that player's board, moving all other rows
+  upwards.
 7. For a player, if any cell is above at or above the 20th row (row index >=
   20), that player tops out. No further garbage should be applied to topped out
   players.
