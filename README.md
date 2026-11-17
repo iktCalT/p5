@@ -674,20 +674,20 @@ fn create_mut_bot_and_get_any_action_test() {
 We now want you to create a harness to allow two bots to play each other. This
 involves adding the following flags to your binary:
 - `--list-bots`: print a newline separated list of implemented bots
-- `--trace-bot-run <bot1> <bot1-tracefile> <bot2> <bot2-tracefile>`: print the
-  board state after `<bot1>` or `<bot2>` tops out in the output format described
-  above. Write `<bot1>`'s inputs to `<bot1-tracefile>` in the input format
-  described above and write `<bot2>`'s inputs to `<bot2-tracefile>` in the input
-  format described above.
+- `--trace-bot-run --p1 <bot1> --o1 <bot1-tracefile> --p2 <bot2> --o2 <bot2-tracefile>`:
+  print the board state after `<bot1>` or `<bot2>` tops out in the output format
+  described above. Write `<bot1>`'s inputs to `<bot1-tracefile>` in the input
+  format described above and write `<bot2>`'s inputs to `<bot2-tracefile>` in
+  the input format described above.
 
 As an example
 ```
 $ cargo run -- --list-bots
 good-bot
 bad-bot
-$ cargo run -- --trace-bot-run good-bot t1.txt bad-bot t2.txt
-...o......    ...o......
-...ooo....    .ooooooo..
+$ cargo run -- --resources resources --trace-bot-run --p1 good-bot --p2 bad-bot --o1 p1.txt --o2 p2.txt
+...o......    ..........
+...ooo....    ....oooo..
 ..........    ...oooooo.
 ..........    ....oo....
 ..........    ....oo....
