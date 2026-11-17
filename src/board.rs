@@ -78,7 +78,7 @@ impl Board {
         string
     }
 
-    fn get(&self, position: Position) -> Option<&CellState> {
+    fn get(&self, position: &Position) -> Option<&CellState> {
         if position.0 < 0 || position.1 < 0 {
             return None;
         }
@@ -101,7 +101,7 @@ impl Board {
         if position.0 < 0 || position.1 < 0 {
             return false;
         }
-        let Some(pos) = self.get(*position) else {
+        let Some(pos) = self.get(position) else {
             return false;
         };
         *pos == CellState::Empty

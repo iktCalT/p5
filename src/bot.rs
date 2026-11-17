@@ -1,7 +1,7 @@
 use crate::tetromino;
 
-static WIDTH: usize = 10;
-static HEIGHT: usize = 20;
+pub static WIDTH: usize = 10;
+pub static HEIGHT: usize = 20;
 
 // pasted from readme
 pub enum TetrominoType {
