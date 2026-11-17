@@ -149,6 +149,7 @@ impl AddAssign for Position {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TetrominoState(pub Vec<Position>);
 
+#[derive(Debug, Clone)]
 pub struct Tetromino {
     pub ttype: TetrominoType,
     pub rotation: Rotation,

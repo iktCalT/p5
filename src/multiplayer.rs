@@ -79,35 +79,35 @@ impl MultiplayerManager {
 
     /// Advances both boards by one frame and then resolves garbage.
     pub fn tick(&mut self, p1_action: TetrisAction, p2_action: TetrisAction) {
-        let l1 = self.step_player(0, p1_action);
-        let l2 = self.step_player(1, p2_action);
-        self.exchange_garbage(l1, l2);
+        let (l1, locked1) = self.step_player(0, p1_action);
+        let (l2, locked2) = self.step_player(1, p2_action);
+        self.exchange_garbage(l1, l2, locked1, locked2);
     }
 
-    /// Steps one player's game, return # lines cleared
-    fn step_player(&mut self, idx: usize, action: TetrisAction) -> usize {
+    /// Steps one player's game, return (# lines cleared, locked this tick)
+    fn step_player(&mut self, idx: usize, action: TetrisAction) -> (usize, bool) {
         let player = &mut self.players[idx];
         if player.topped_out {
-            return 0;
+            return (0, false);
         }
         match player.game.step(action) {
             Ok(outcome) => {
                 if outcome.topped_out {
                     player.topped_out = true;
                 }
-                outcome.lines_cleared
+                (outcome.lines_cleared, outcome.locked)
             }
             // Step error stops game
             Err(_) => {
                 player.topped_out = true;
-                0
+                (0, false)
             }
         }
     }
 
     /// Resolves garbage for one tick
-    pub fn exchange_garbage(&mut self, l1: usize, l2: usize) {
-        // Say player 1 has g1 lines of garbage in their queue, and player 2 has
+    pub fn exchange_garbage(&mut self, l1: usize, l2: usize, locked1: bool, locked2: bool) {
+        // Say player 1 has g1 lines of garbage in their queue, and player 2 has 
         // g2 lines of garbage in their queue.
         let g1 = pending_rows(&self.players[0].garbage_queue);
         let g2 = pending_rows(&self.players[1].garbage_queue);
@@ -145,14 +145,19 @@ impl MultiplayerManager {
             });
         }
 
-        // All garbage in each player's queue tagged with timer equal to 0 has that
-        // garbage removed from the queue and applied to the bottom that player's board,
-        //  moving all other rows upwards.
+        // Check if a given player had a piece lock this turn, if so: all garbage
+        // in that player's queue tagged with timer equal to 0 has that garbage
+        // removed from the queue and applied to the bottom of that player's board,
+        // moving all other rows upwards.
         // For a player, if any cell is above at or above the 20th row (row index >= 20),
         //  that player tops out. No further garbage should be applied to topped out
         // players.
-        self.apply_ready_garbage(0);
-        self.apply_ready_garbage(1);
+        if locked1 {
+            self.apply_ready_garbage(0);
+        }
+        if locked2 {
+            self.apply_ready_garbage(1);
+        }
 
         // All garbage timers are reduced by 1.
         for player in self.players.iter_mut() {

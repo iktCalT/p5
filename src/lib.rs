@@ -3,5 +3,7 @@ pub mod board;
 pub mod bot;
 pub mod manager;
 pub mod multiplayer;
+pub mod simulator;
+pub mod board_arr;
 pub mod setting;
 pub mod tetromino;

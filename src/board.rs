@@ -47,19 +47,13 @@ impl Board {
     }
 
     pub fn print(&self) {
-        println!("{}", self.as_string())
+        print!("{}", self.as_string())
     }
 
     /// Is is an expensive function, only used for debugging
     pub fn print_with_tetromino(&self, tetromino: &Tetromino, position: &Position) {
         let mut copy = self.clone();
         for point in tetromino.state().0.iter() {
-            // Overlay the falling piece directly instead of going through
-            // `insert`: `insert` rejects rows >= height (so the piece in the
-            // spawn buffer at rows 20-21 would be invisible) and errors on an
-            // already-filled cell (which would panic for the piece that just
-            // topped out). Writing the cell directly draws the buffer rows and
-            // is idempotent.
             if let Some(cell) = copy.get_mut(*position + point.clone()) {
                 *cell = CellState::Filled;
             }
@@ -88,7 +82,7 @@ impl Board {
         string
     }
 
-    fn get(&self, position: Position) -> Option<&CellState> {
+    fn get(&self, position: &Position) -> Option<&CellState> {
         if position.0 < 0 || position.1 < 0 {
             return None;
         }
@@ -111,7 +105,7 @@ impl Board {
         if position.0 < 0 || position.1 < 0 {
             return false;
         }
-        let Some(pos) = self.get(*position) else {
+        let Some(pos) = self.get(position) else {
             return false;
         };
         *pos == CellState::Empty

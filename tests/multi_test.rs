@@ -24,9 +24,10 @@ fn rows(mp: &MultiplayerManager, idx: usize) -> usize {
 }
 
 /// Run `ticks` garbage resolutions with no line clears, ageing the queues.
+/// Both players are locked so garbage gets applied.
 fn age(mp: &mut MultiplayerManager, ticks: usize) {
     for _ in 0..ticks {
-        mp.exchange_garbage(0, 0);
+        mp.exchange_garbage(0, 0, true, true);
     }
 }
 
@@ -39,7 +40,7 @@ fn any_filled(mp: &MultiplayerManager, idx: usize) -> bool {
 fn multiline_clear_sends_garbage() {
     let mut mp = MultiplayerManager::new();
     // p1 clears 4 lines -> s1 = 3 garbage rows to p2.
-    mp.exchange_garbage(4, 0);
+    mp.exchange_garbage(4, 0, true, false);
     assert_eq!(rows(&mp, 0), 0);
     assert_eq!(rows(&mp, 1), 3);
 }
@@ -47,7 +48,7 @@ fn multiline_clear_sends_garbage() {
 #[test]
 fn single_line_clear_sends_nothing() {
     let mut mp = MultiplayerManager::new();
-    mp.exchange_garbage(1, 1);
+    mp.exchange_garbage(1, 1, true, true);
     assert_eq!(rows(&mp, 0), 0);
     assert_eq!(rows(&mp, 1), 0);
 }
@@ -56,10 +57,10 @@ fn single_line_clear_sends_nothing() {
 fn sending_cancels_own_pending_garbage() {
     let mut mp = MultiplayerManager::new();
     // p2 clears 3 lines -> s2 = 2 pending rows sent to p1.
-    mp.exchange_garbage(0, 3);
+    mp.exchange_garbage(0, 3, false, true);
     assert_eq!(rows(&mp, 0), 2);
     // p1 clears 4 lines -> s1 = 3: cancels its own 2 pending, sends 1 to p2.
-    mp.exchange_garbage(4, 0);
+    mp.exchange_garbage(4, 0, true, false);
     assert_eq!(rows(&mp, 0), 0);
     assert_eq!(rows(&mp, 1), 1);
 }
@@ -67,7 +68,7 @@ fn sending_cancels_own_pending_garbage() {
 #[test]
 fn newly_sent_garbage_is_not_immediately_applied() {
     let mut mp = MultiplayerManager::new();
-    mp.exchange_garbage(4, 0);
+    mp.exchange_garbage(4, 0, true, false);
     // Timer started at garbage_queue_time and was aged once this tick.
     assert_eq!(
         mp.players[1]
@@ -85,7 +86,7 @@ fn newly_sent_garbage_is_not_immediately_applied() {
 fn ready_garbage_applies_with_a_shared_hole_column() {
     let mut mp = MultiplayerManager::new();
     // p2 clears 3 lines -> sends a 2-row aligned block to p1.
-    mp.exchange_garbage(0, 3);
+    mp.exchange_garbage(0, 3, false, true);
     assert_eq!(rows(&mp, 0), 2);
     // Age it until its timer hits 0 and it is applied to p1's board.
     age(&mut mp, SETTINGS.garbage_queue_time);
@@ -110,7 +111,7 @@ fn garbage_can_top_out_a_player() {
     // Send more garbage rows than the playfield is tall: once a row is pushed
     // to or above row `height`, the receiving player tops out.
     let send = SETTINGS.height + 1;
-    mp.exchange_garbage(0, send + 1); // s2 = send
+    mp.exchange_garbage(0, send + 1, false, true); // s2 = send
     age(&mut mp, SETTINGS.garbage_queue_time);
     assert!(mp.players[0].topped_out);
     assert!(mp.players.iter().any(|p| p.topped_out));

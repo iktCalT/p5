@@ -8,8 +8,8 @@ use std::thread::{self, JoinHandle};
 use crate::setting::SETTINGS;
 use crate::tetromino::{self, Position, Rotation};
 
-static WIDTH: usize = 10;
-static HEIGHT: usize = 20;
+pub static WIDTH: usize = 10;
+pub static HEIGHT: usize = 20;
 const SPAWN_BUFFER: isize = 2;
 const NUM_WORKERS: usize = 4;
 const ROT_PLANS: [&[TetrisAction]; 4] = [

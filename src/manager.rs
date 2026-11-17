@@ -22,6 +22,8 @@ pub struct StepOutcome {
     pub lines_cleared: usize,
     /// True if the player topped out this frame; the game is over.
     pub topped_out: bool,
+    /// True if a piece locked this frame.
+    pub locked: bool,
 }
 
 pub struct GameManager {
@@ -203,18 +205,12 @@ impl GameManager {
         }
 
         if topped_out {
-            return Ok(StepOutcome {
-                topped_out: true,
-                lines_cleared: 0,
-            });
+            return Ok(StepOutcome { topped_out: true, lines_cleared: 0, locked: true });
         }
 
         let lines_cleared = self.board.elimination();
         self.spawn_next();
-        Ok(StepOutcome {
-            topped_out: false,
-            lines_cleared,
-        })
+        Ok(StepOutcome { topped_out: false, lines_cleared, locked: true })
     }
 
     /// Draws the next tetromino from the bag and resets it to the spawn state.

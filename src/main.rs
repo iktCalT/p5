@@ -7,9 +7,7 @@ use std::sync::mpsc::channel;
 use p5_tetris::multiplayer::MultiplayerManager;
 use p5_tetris::setting::SETTINGS;
 use p5_tetris::setting::set_resources_dir;
-use p5_tetris::{
-    bag_randomizer::BagRandomizer, board::Board, manager::GameManager, tetromino::TetrisAction,
-};
+use p5_tetris::{bag_randomizer::BagRandomizer, board::{Board, SPAWN_BUFFER}, manager::GameManager, tetromino::TetrisAction};
 
 // #[derive(Default, Debug)]
 // struct CliArgs {
@@ -97,6 +95,12 @@ fn multi_player(input_paths: &Vec<PathBuf>) {
         mp.tick(c1.into(), c2.into());
     }
 
-    mp.players[0].game.show_with_tetromino();
-    mp.players[1].game.show_with_tetromino();
+    // Full 10x22 grid is shown
+    let board1 = mp.players[0].game.show_as_string();
+    let board2 = mp.players[1].game.show_as_string();
+    let rows1 = board1.lines().take(SPAWN_BUFFER + SETTINGS.height);
+    let rows2 = board2.lines().take(SPAWN_BUFFER + SETTINGS.height);
+    for (r1, r2) in zip(rows1, rows2) {
+        println!("{}    {}", r1, r2);
+    }
 }
