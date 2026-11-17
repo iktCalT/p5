@@ -414,6 +414,7 @@ pub struct GarbageLine {
     pub ticks_till_applied: usize,
 }
 
+
 pub trait MultiPlayerBot {
     /// Create a new bot.
     fn new() -> Self;
@@ -427,4 +428,47 @@ pub trait MultiPlayerBot {
         p2_state: &BoardState,
         p2_garbage: &[GarbageLine],
     ) -> TetrisAction;
+}
+
+struct GoodMultiBot {
+    bot: SimulatorBot,
+}
+
+
+impl MultiPlayerBot for GoodMultiBot {
+    fn new() -> Self {
+        Self {
+            bot: SimulatorBot::new()
+        } 
+    }
+
+    fn get_move(
+        &mut self,
+        p1_state: &BoardState,
+        p1_garbage: &[GarbageLine],
+        p2_state: &BoardState,
+        p2_garbage: &[GarbageLine],
+    ) -> TetrisAction
+    {
+        self.bot.get_move(p1_state)
+    }
+}
+
+struct BadMultiBot {}
+
+impl MultiPlayerBot for BadMultiBot {
+    fn new() -> Self {
+        Self {}
+    }
+
+    fn get_move(
+        &mut self,
+        p1_state: &BoardState,
+        p1_garbage: &[GarbageLine],
+        p2_state: &BoardState,
+        p2_garbage: &[GarbageLine],
+    ) -> TetrisAction
+    {
+        TetrisAction::H
+    }
 }
