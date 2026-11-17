@@ -1,6 +1,8 @@
-use std::sync::mpsc::Receiver;
+use std::result;
+use std::sync::mpsc::{Receiver, Sender};
 
 use crate::board::{Board, CellState};
+use crate::bot::BoardState;
 use crate::setting::SETTINGS;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
 
@@ -28,6 +30,7 @@ pub struct StepOutcome {
 
 pub struct GameManager {
     rx: Receiver<TetrisAction>,
+    tx: Sender<(BoardState, StepOutcome)>,
     /// Frames elapsed since the current piece was last forced down by gravity.
     time: u64,
     gravity: u64,
@@ -36,9 +39,11 @@ pub struct GameManager {
     /// Frames a piece may rest on the ground before it locks into place.
     lock_delay: u64,
     pub board: Board,
+    prev_outcome: StepOutcome,
     bag_randomizer: BagRandomizer<TetrominoType>,
     curr_pos: Position,
     curr_tetromino: Tetromino,
+    lines_cleared: usize,
 }
 
 impl GameManager {
@@ -47,6 +52,7 @@ impl GameManager {
         gravity_decrease: u64,
         lock_delay: u64,
         rx: Receiver<TetrisAction>,
+        tx: Sender<(BoardState, StepOutcome)>,
         board: Board,
         mut bag_randomizer: BagRandomizer<TetrominoType>,
     ) -> Self {
@@ -57,14 +63,17 @@ impl GameManager {
 
         Self {
             rx,
+            tx,
             time: 0,
             gravity,
             gravity_decrease,
             lock_delay,
             board,
+            prev_outcome: StepOutcome{lines_cleared: 0, topped_out: false, locked: false},
             bag_randomizer,
             curr_pos,
             curr_tetromino,
+            lines_cleared: 0
         }
     }
 
@@ -101,14 +110,21 @@ impl GameManager {
             }
 
             if action == TetrisAction::S {
-                self.show_with_tetromino();
+                // self.show_with_tetromino();
+                self.tx.send((self.to_board_state(), self.prev_outcome)).unwrap();
                 continue;
             }
 
-            if self.step(action)?.topped_out {
+            let rst = self.step(action)?;
+            self.lines_cleared += rst.lines_cleared;
+            self.prev_outcome = rst;
+            self.prev_outcome.lines_cleared = self.lines_cleared;
+            if rst.topped_out {
+                println!("Topped out.");
                 return Ok(());
             }
         }
+        println!("Received quit.");
         Ok(())
     }
 

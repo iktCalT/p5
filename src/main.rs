@@ -54,6 +54,7 @@ fn main() {
 
 fn single_player(input_path: &PathBuf) {
     let (tx, rx) = channel::<TetrisAction>();
+    let (tx_outcome, rx_outcome) = channel();
 
     let content = fs::read_to_string(&input_path).expect("error reading file ");
     for c in content.chars().filter(|c| !c.is_ascii_whitespace()) {
@@ -72,6 +73,7 @@ fn single_player(input_path: &PathBuf) {
         SETTINGS.gravity_decrease,
         SETTINGS.lock_delay,
         rx,
+        tx_outcome,
         board,
         bag_randomizer,
     );
