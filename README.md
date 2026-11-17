@@ -37,6 +37,7 @@
 - Have garbage applied only after a piece locks.
 - Fix CLI command to make it more reasonable.
 - Fix bot interface to make it actually make sense.
+- Fix typo in single player bot type alias name.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -461,7 +462,7 @@ pub type MySinglePlayerBot = /* TODO: Replace this comment with your bot! */;
 #[test]
 fn create_bot_and_get_any_action_test() {
     let config_path: PathBuf = "resources".into();
-    let mut bot = SinglePlayerBot::new(&config_path);
+    let mut bot = MySinglePlayerBot::new(&config_path);
     let m = bot.get_move();
     bot.update_with(m);
 }
