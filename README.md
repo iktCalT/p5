@@ -40,6 +40,9 @@
 - Fix typo in single player bot type alias name.
 - Remove mention of multithreaded part 3, it got scrapped.
 
+2026-11-17
+- Add some larger tests.
+
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
 If you've never played Tetris against other people try it out! It's a fun game
