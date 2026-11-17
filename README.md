@@ -35,6 +35,8 @@
 
 2026-11-16
 - Have garbage applied only after a piece locks.
+- Fix CLI command to make it more reasonable.
+- Fix bot interface to make it actually make sense.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
