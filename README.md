@@ -38,6 +38,7 @@
 - Fix CLI command to make it more reasonable.
 - Fix bot interface to make it actually make sense.
 - Fix typo in single player bot type alias name.
+- Remove mention of multithreaded part 3, it got scrapped.
 
 ## Introduction
 For project 5 and project 6 you will be implementing a networked Tetris game.
@@ -65,8 +66,8 @@ Project 5 will involve four parts:
 4. writing a design document
 
 For this project, we want you to implement something multithreaded for you bot
-in (2) and have clients on separate threads communicating with a "server"
-thread for part (3). We will expand in the corresponding sections.
+in (2), likely some sort of parallel tree search. We will expand in the
+corresponding section.
 
 The rest you may implement as you want, though we will load test your designs
 and the most robust teams may receive a small amount of extra credit on this or
