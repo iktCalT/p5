@@ -1,6 +1,12 @@
 use std::{sync::mpsc::channel, thread::current};
 
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::{SETTINGS, Settings}, tetromino::{TetrisAction, TetrominoType}};
+use p5_tetris::{
+    bag_randomizer::BagRandomizer,
+    board::Board,
+    manager::GameManager,
+    setting::{SETTINGS, Settings},
+    tetromino::{TetrisAction, TetrominoType},
+};
 
 #[test]
 fn test_manager() {
@@ -8,7 +14,7 @@ fn test_manager() {
 
     let (tx, rx) = channel::<TetrisAction>();
 
-    let seed:[u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+    let seed: [u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 
@@ -32,7 +38,7 @@ fn test_manager_gravity() {
 
     let (tx, rx) = channel::<TetrisAction>();
 
-    let seed:[u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+    let seed: [u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 
@@ -66,7 +72,7 @@ fn test_manager_rotate() {
 
     let (tx, rx) = channel::<TetrisAction>();
 
-    let seed:[u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+    let seed: [u8; 16] = [6, 7, 6, 7, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
     let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), seed);
     let board = Board::new(10, 20);
 

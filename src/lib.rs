@@ -1,9 +1,9 @@
 pub mod bag_randomizer;
 pub mod board;
-pub mod setting;
-pub mod tetromino;
+pub mod bot;
 pub mod manager;
 pub mod multiplayer;
-pub mod bot;
 pub mod simulator;
 pub mod board_arr;
+pub mod setting;
+pub mod tetromino;

@@ -1,20 +1,24 @@
 use std::fmt::{Display, Write};
 
-use crate::{manager::ManagerError, tetromino::{Position, Tetromino}};
+use crate::{
+    manager::ManagerError,
+    tetromino::{Position, Tetromino},
+};
 
 /// Number of extra rows above the playfield used as a spawn buffer.
 pub const SPAWN_BUFFER: usize = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellState {
-    Filled, Empty
+    Filled,
+    Empty,
 }
 
 impl Into<char> for &CellState {
     fn into(self) -> char {
         match self {
             CellState::Empty => '.',
-            CellState::Filled => 'o'
+            CellState::Filled => 'o',
         }
     }
 }
@@ -38,7 +42,7 @@ impl Board {
         Self {
             width,
             height,
-            grid: vec![vec![CellState::Empty; width]; height + SPAWN_BUFFER]
+            grid: vec![vec![CellState::Empty; width]; height + SPAWN_BUFFER],
         }
     }
 
@@ -111,7 +115,8 @@ impl Board {
     pub fn elimination(&mut self) -> usize {
         // Restore against the grid length (height + SPAWN_BUFFER = 22), not playing field length
         let rows_before = self.grid.len();
-        self.grid.retain(|row| row.iter().any(|point| *point == CellState::Empty));
+        self.grid
+            .retain(|row| row.iter().any(|point| *point == CellState::Empty));
         // let eliminated = self.height - self.grid.len();
         let eliminated = rows_before - self.grid.len();
         for _ in 0..eliminated {
@@ -141,8 +146,8 @@ impl Board {
             .any(|row| row.iter().any(|cell| *cell == CellState::Filled))
     }
 
-    /// Marks the cell at `position` as Filled. 
-    // `Ok(false)` for if the cell lies above the playfield (a top-out), 
+    /// Marks the cell at `position` as Filled.
+    // `Ok(false)` for if the cell lies above the playfield (a top-out),
     // `Ok(true)` for normal Fill
     /// Error if the cell is off-grid or already occupied.
     pub fn insert(&mut self, position: Position) -> Result<bool, ManagerError> {

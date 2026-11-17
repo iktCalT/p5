@@ -1,6 +1,6 @@
 use p5_tetris::bot::MultiPlayerBot;
 
-pub type MyMultiPlayerBot = MultiPlayerBot/* TODO: Replace this comment with your bot! */;
+pub type MyMultiPlayerBot = MultiPlayerBot;
 
 #[test]
 fn create_mut_bot_and_get_any_action_test() {

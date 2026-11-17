@@ -1,6 +1,5 @@
-use p5_tetris::{board::Board, tetromino::Position};
 use p5_tetris::manager::ManagerError;
-
+use p5_tetris::{board::Board, tetromino::Position};
 
 #[test]
 fn test_board_print() {
@@ -16,7 +15,10 @@ fn test_board_insert() {
 
     board.insert(pos).unwrap();
     assert_eq!(false, board.is_empty(&pos));
-    assert_eq!(Err(ManagerError::InsertIntoOccupiedPosition), board.insert(pos));
+    assert_eq!(
+        Err(ManagerError::InsertIntoOccupiedPosition),
+        board.insert(pos)
+    );
     board.print();
 }
 
@@ -28,12 +30,18 @@ fn test_board_remove() {
 
     board.insert(pos).unwrap();
     assert_eq!(false, board.is_empty(&pos));
-    assert_eq!(Err(ManagerError::InsertIntoOccupiedPosition), board.insert(pos));
+    assert_eq!(
+        Err(ManagerError::InsertIntoOccupiedPosition),
+        board.insert(pos)
+    );
 
     board.remove(pos).unwrap();
     assert_eq!(true, board.is_empty(&pos));
 
-    assert_eq!(Err(ManagerError::RemoveFromEmptyPosition), board.remove(pos));
+    assert_eq!(
+        Err(ManagerError::RemoveFromEmptyPosition),
+        board.remove(pos)
+    );
     board.print();
 }
 
