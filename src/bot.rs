@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::fmt::Display;
 use std::sync::{
     Arc, Condvar, Mutex, RwLock,
     mpsc::{self, Receiver},
@@ -70,6 +71,35 @@ impl Into<tetromino::TetrisAction> for &TetrisAction {
     }
 }
 
+impl Into<TetrisAction> for &tetromino::TetrisAction {
+    fn into(self) -> TetrisAction {
+        match self {
+            tetromino::TetrisAction::C => TetrisAction::C,
+            tetromino::TetrisAction::W => TetrisAction::W,
+            tetromino::TetrisAction::L => TetrisAction::L,
+            tetromino::TetrisAction::R => TetrisAction::R,
+            tetromino::TetrisAction::D => TetrisAction::D,
+            tetromino::TetrisAction::H => TetrisAction::H,
+            tetromino::TetrisAction::E => TetrisAction::E,
+            _ => panic!()
+        }
+    }
+}
+
+impl Into<u8> for TetrisAction {
+    fn into(self) -> u8 {
+        match self {
+            TetrisAction::C => b'C', 
+            TetrisAction::W => b'W', 
+            TetrisAction::L => b'L', 
+            TetrisAction::R => b'R', 
+            TetrisAction::D => b'D', 
+            TetrisAction::H => b'H', 
+            TetrisAction::E => b'E', 
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CellState {
     Filled,
@@ -110,8 +140,6 @@ struct SpmcQueue {
     shutdown: bool,
 }
 
-/*
- */
 pub struct SimulatorBot {
     shared_board: Arc<RwLock<BoardState>>,
     moves_to_sim: Arc<(Mutex<SpmcQueue>, Condvar)>, //
@@ -430,8 +458,14 @@ pub trait MultiPlayerBot {
     ) -> TetrisAction;
 }
 
-struct GoodMultiBot {
+pub struct GoodMultiBot {
     bot: SimulatorBot,
+}
+
+impl Display for GoodMultiBot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "good-bot")
+    }
 }
 
 
@@ -454,7 +488,13 @@ impl MultiPlayerBot for GoodMultiBot {
     }
 }
 
-struct BadMultiBot {}
+pub struct BadMultiBot {}
+
+impl Display for BadMultiBot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "bad-bot")
+    }
+}
 
 impl MultiPlayerBot for BadMultiBot {
     fn new() -> Self {
