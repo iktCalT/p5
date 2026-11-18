@@ -120,11 +120,9 @@ impl GameManager {
             self.prev_outcome = rst;
             self.prev_outcome.lines_cleared = self.lines_cleared;
             if rst.topped_out {
-                println!("Topped out.");
                 return Ok(());
             }
         }
-        println!("Received quit.");
         Ok(())
     }
 
