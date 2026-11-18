@@ -153,8 +153,8 @@ fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
         let action2 = badbot.get_move(&board2, &garbage2, &board1, &garbage1);
         manager.tick((&action1).into(), (&action2).into());
 
-        goodbot_file.write_all(&[Into::<u8>::into(action1)]);
-        badbot_file.write_all(&[Into::<u8>::into(action2)]);
+        goodbot_file.write_all(&[Into::<u8>::into(action1)]).unwrap();
+        badbot_file.write_all(&[Into::<u8>::into(action2)]).unwrap();
     }
 
     let board1 = manager.players[0].game.show_as_string();
