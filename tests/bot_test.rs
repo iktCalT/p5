@@ -1,9 +1,9 @@
 use std::{sync::mpsc::channel, thread::spawn};
 
-use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, bot::{BoardState, Bot, CellState, MultiPlayerBot, SimulatorBot, TetrominoType}, manager::GameManager, setting::SETTINGS};
+use p5_tetris::{bag_randomizer::BagRandomizer, board::Board, bot::{BoardState, Bot, CellState, GoodMultiBot, MultiPlayerBot, SimulatorBot, TetrominoType}, manager::GameManager, setting::SETTINGS};
 
 pub type MySinglePlayerBot = SimulatorBot;
-// pub type MyMultiPlayerBot = MultiPlayerBot;
+pub type MyMultiPlayerBot = GoodMultiBot;
 
 #[test]
 fn create_bot_and_get_any_action_test() {
@@ -38,8 +38,8 @@ fn single_bot_test() {
     let mut bot = MySinglePlayerBot::new();
     
     loop {
-        tx.send(p5_tetris::tetromino::TetrisAction::S);
-        let outcome = rx_outcome.recv().unwrap();
+        tx.send(p5_tetris::tetromino::TetrisAction::S).unwrap();
+        let outcome = rx_outcome.try_recv().unwrap();
         println!("{:?}", outcome.1);
 
         if outcome.1.topped_out {

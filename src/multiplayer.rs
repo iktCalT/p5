@@ -6,7 +6,7 @@ use rand_xoshiro::Xoshiro128PlusPlus;
 
 use crate::bag_randomizer::BagRandomizer;
 use crate::board::Board;
-use crate::bot::GarbageLine;
+use crate::bot::{BoardState, GarbageLine};
 use crate::manager::GameManager;
 use crate::setting::SETTINGS;
 use crate::tetromino::{TetrisAction, TetrominoType};
@@ -77,6 +77,20 @@ impl MultiplayerManager {
             garbage_rng: Xoshiro128PlusPlus::from_seed(SETTINGS.seed),
             topped_out: false,
         }
+    }
+
+    pub fn topped_out(&self) -> (bool, bool) {
+        (self.players[0].topped_out, self.players[1].topped_out)
+    }
+
+    pub fn boards(&self) -> (BoardState, BoardState) {
+        (self.players[0].game.to_board_state(), self.players[1].game.to_board_state())
+    }
+
+    pub fn garbages(&self) -> (&[GarbageLine], &[GarbageLine]) {
+        // TODO: replace the following with real garbage lines
+        // (&self.players[0].garbage_queue, &self.players[1].garbage_queue)
+        todo!()
     }
 
     /// Advances both boards by one frame and then resolves garbage.

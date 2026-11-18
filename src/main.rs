@@ -1,9 +1,15 @@
 use std::env;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use std::iter::zip;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
+use p5_tetris::bot::BadMultiBot;
+use p5_tetris::bot::GarbageLine;
+use p5_tetris::bot::GoodMultiBot;
+use p5_tetris::bot::MultiPlayerBot;
 use p5_tetris::multiplayer::MultiplayerManager;
 use p5_tetris::setting::SETTINGS;
 use p5_tetris::setting::set_resources_dir;
@@ -21,6 +27,8 @@ use p5_tetris::{bag_randomizer::BagRandomizer, board::{Board, SPAWN_BUFFER}, man
 fn main() {
     let mut sp_path: Option<PathBuf> = None;
     let mut mp_paths: Vec<PathBuf> = Vec::new();
+    let mut goodbot_path: Option<PathBuf> = None;
+    let mut badbot_path: Option<PathBuf> = None;
 
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -36,6 +44,28 @@ fn main() {
             "--resources" => {
                 let dir = args.next().expect("Expected directory");
                 set_resources_dir(PathBuf::from(dir));
+            }
+            "--list-bots" => {
+                let goodbot = GoodMultiBot::new();
+                let badbot = BadMultiBot::new();
+                println!("{}", goodbot);
+                println!("{}", badbot);
+            }
+            "--trace-bot-run" => {
+                for _ in 0..2 {
+                    match args.next().expect("missing bot name").as_str() {
+                        "good-bot" => goodbot_path = Some(PathBuf::from(args.next().expect("missing good bot path"))),
+                        "bad-bot" => badbot_path = Some(PathBuf::from(args.next().expect("missing bad bot path"))),
+                        _ => panic!("Invalid arguments")
+                    }
+                }
+                let (Some(goodbot_path), Some(badbot_path)) = (goodbot_path, badbot_path) else {
+                    panic!("Invalid arguments");
+                };
+                let goodbot_file = File::create(goodbot_path).unwrap();
+                let badbot_file = File::create(badbot_path).unwrap();
+                simulate_multi_bots(goodbot_file, badbot_file);
+                return;
             }
             _ => panic!("Unknown arg"),
         }
@@ -100,6 +130,35 @@ fn multi_player(input_paths: &Vec<PathBuf>) {
     // Full 10x22 grid is shown
     let board1 = mp.players[0].game.show_as_string();
     let board2 = mp.players[1].game.show_as_string();
+    let rows1 = board1.lines().take(SPAWN_BUFFER + SETTINGS.height);
+    let rows2 = board2.lines().take(SPAWN_BUFFER + SETTINGS.height);
+    for (r1, r2) in zip(rows1, rows2) {
+        println!("{}    {}", r1, r2);
+    }
+}
+
+fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
+    let mut goodbot = GoodMultiBot::new();
+    let mut badbot = BadMultiBot::new();
+
+    let mut manager = MultiplayerManager::new();
+
+    while manager.topped_out() == (false, false) {
+        let (board1, board2) = manager.boards();
+
+        // TODO: finish manager.garbages()
+        // let (garbage1, garbage2) = manager.garbages();
+        let (garbage1, garbage2) = (Vec::<GarbageLine>::new(), Vec::<GarbageLine>::new());
+        let action1 = goodbot.get_move(&board1, &garbage1, &board2, &garbage2);
+        let action2 = badbot.get_move(&board2, &garbage2, &board1, &garbage1);
+        manager.tick((&action1).into(), (&action2).into());
+
+        goodbot_file.write_all(&[Into::<u8>::into(action1)]);
+        badbot_file.write_all(&[Into::<u8>::into(action2)]);
+    }
+
+    let board1 = manager.players[0].game.show_as_string();
+    let board2 = manager.players[1].game.show_as_string();
     let rows1 = board1.lines().take(SPAWN_BUFFER + SETTINGS.height);
     let rows2 = board2.lines().take(SPAWN_BUFFER + SETTINGS.height);
     for (r1, r2) in zip(rows1, rows2) {
