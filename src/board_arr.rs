@@ -1,11 +1,12 @@
-use std::fmt::{Display, Write};
-
-use crate::{board::{CellState, SPAWN_BUFFER}, bot::{HEIGHT, WIDTH}, manager::ManagerError, tetromino::{self, Position, Tetromino}};
+use crate::{
+    board::CellState,
+    bot::{HEIGHT, WIDTH},
+    manager::ManagerError,
+    tetromino::Position,
+};
 
 #[derive(Debug, Clone)]
-pub struct BoardArr<'a> (
-    pub &'a [[CellState; WIDTH]; HEIGHT]
-);
+pub struct BoardArr<'a>(pub &'a [[CellState; WIDTH]; HEIGHT]);
 
 impl<'a> BoardArr<'a> {
     pub fn from(board: &'a [[CellState; WIDTH]; HEIGHT]) -> Self {
@@ -36,9 +37,7 @@ impl<'a> BoardArr<'a> {
     pub fn eliminated_lines(&self) -> usize {
         self.0
             .iter()
-            .filter(|row| row
-                .iter()
-                .all(|point| *point == CellState::Filled))
+            .filter(|row| row.iter().all(|point| *point == CellState::Filled))
             .count()
     }
 
@@ -55,7 +54,7 @@ impl<'a> BoardArr<'a> {
     }
 
     /// Simulate insertion, but don't modify board
-    // `Ok(false)` for if the cell lies above the playfield (a top-out), 
+    // `Ok(false)` for if the cell lies above the playfield (a top-out),
     // `Ok(true)` for normal Fill
     /// Error if the cell is off-grid or already occupied.
     pub fn simulate_insert(&mut self, position: Position) -> Result<bool, ManagerError> {

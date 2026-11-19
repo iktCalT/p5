@@ -1,4 +1,6 @@
-use p5_tetris::bot::{BoardState, Bot, CellState, GoodMultiBot, MultiPlayerBot, SimulatorBot, TetrominoType};
+use p5_tetris::bot::{
+    BoardState, Bot, CellState, GoodMultiBot, MultiPlayerBot, SimulatorBot, TetrominoType,
+};
 
 pub type MySinglePlayerBot = SimulatorBot;
 pub type MyMultiPlayerBot = GoodMultiBot;
@@ -16,7 +18,7 @@ fn create_bot_and_get_any_action_test() {
 }
 
 #[test]
-fn create_mut_bot_and_get_any_action_tescreate_mut_bot_and_get_any_action_testt() {
+fn create_mut_bot_and_get_any_action_test() {
     let mut bot = MyMultiPlayerBot::new();
     let state = &BoardState {
         tetromino_row: 20,

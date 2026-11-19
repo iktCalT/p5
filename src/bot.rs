@@ -1,18 +1,16 @@
 use std::collections::VecDeque;
 use std::fmt::Display;
-use std::sync::mpsc::Sender;
 use std::sync::{
     Arc, Condvar, Mutex, RwLock,
     mpsc::{self, Receiver},
 };
 use std::thread::{self, JoinHandle};
 
-use crate::manager::GameManager;
 use crate::setting::SETTINGS;
-use crate::tetromino::{self, Position, Rotation, Tetromino};
+use crate::tetromino::{self, Position, Rotation};
 
-pub static WIDTH: usize = 10;
-pub static HEIGHT: usize = 20;
+pub const WIDTH: usize = 10;
+pub const HEIGHT: usize = 20;
 const SPAWN_BUFFER: isize = 2;
 const NUM_WORKERS: usize = 4;
 const ROT_PLANS: [&[TetrisAction]; 4] = [
@@ -82,7 +80,7 @@ impl Into<TetrisAction> for &tetromino::TetrisAction {
             tetromino::TetrisAction::D => TetrisAction::D,
             tetromino::TetrisAction::H => TetrisAction::H,
             tetromino::TetrisAction::E => TetrisAction::E,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -90,13 +88,13 @@ impl Into<TetrisAction> for &tetromino::TetrisAction {
 impl Into<u8> for TetrisAction {
     fn into(self) -> u8 {
         match self {
-            TetrisAction::C => b'C', 
-            TetrisAction::W => b'W', 
-            TetrisAction::L => b'L', 
-            TetrisAction::R => b'R', 
-            TetrisAction::D => b'D', 
-            TetrisAction::H => b'H', 
-            TetrisAction::E => b'E', 
+            TetrisAction::C => b'C',
+            TetrisAction::W => b'W',
+            TetrisAction::L => b'L',
+            TetrisAction::R => b'R',
+            TetrisAction::D => b'D',
+            TetrisAction::H => b'H',
+            TetrisAction::E => b'E',
         }
     }
 }
@@ -156,7 +154,7 @@ impl SimulatorBot {
             1 => Rotation::Right,
             2 => Rotation::Inverse,
             3 => Rotation::Left,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -269,7 +267,6 @@ impl SimulatorBot {
     //         }
     //     }
 
-        
     //     for (col, row) in landed {
     //         let mut cur_row = *row as isize - 1;
     //         while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
@@ -319,7 +316,7 @@ impl SimulatorBot {
         for i in 0..WIDTH {
             aggregate_height += heights[i];
             if i >= 1 {
-                bumpiness += heights[i].abs_diff(heights[i-1]);
+                bumpiness += heights[i].abs_diff(heights[i - 1]);
             }
         }
 
@@ -520,7 +517,6 @@ pub struct GarbageLine {
     pub ticks_till_applied: usize,
 }
 
-
 pub trait MultiPlayerBot {
     /// Create a new bot.
     fn new() -> Self;
@@ -546,22 +542,20 @@ impl Display for GoodMultiBot {
     }
 }
 
-
 impl MultiPlayerBot for GoodMultiBot {
     fn new() -> Self {
         Self {
-            bot: SimulatorBot::new()
-        } 
+            bot: SimulatorBot::new(),
+        }
     }
 
     fn get_move(
         &mut self,
         p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction
-    {
+        _p1_garbage: &[GarbageLine],
+        _p2_state: &BoardState,
+        _p2_garbage: &[GarbageLine],
+    ) -> TetrisAction {
         self.bot.get_move(p1_state)
     }
 }
@@ -570,7 +564,7 @@ pub struct BadMultiBot {}
 
 impl Display for BadMultiBot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "bad-bot")
+        write!(f, "bad-bot")
     }
 }
 
@@ -581,12 +575,11 @@ impl MultiPlayerBot for BadMultiBot {
 
     fn get_move(
         &mut self,
-        p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction
-    {
+        _p1_state: &BoardState,
+        _p1_garbage: &[GarbageLine],
+        _p2_state: &BoardState,
+        _p2_garbage: &[GarbageLine],
+    ) -> TetrisAction {
         TetrisAction::H
     }
 }

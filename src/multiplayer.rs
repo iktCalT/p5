@@ -9,7 +9,7 @@ use crate::board::Board;
 use crate::bot::{BoardState, GarbageLine};
 use crate::manager::GameManager;
 use crate::setting::SETTINGS;
-use crate::tetromino::{TetrisAction, TetrominoType};
+use crate::tetromino::TetrisAction;
 
 /// Config shared by both players
 // #[derive(Debug, Clone, Copy)]
@@ -58,7 +58,7 @@ impl MultiplayerManager {
     fn make_player() -> Player {
         // To satisfy `GameManager::new`.
         let (_tx, rx) = channel::<TetrisAction>();
-        let (tx_outcome, rx_outcome) = channel();
+        let (tx_outcome, _rx_outcome) = channel();
         let board = Board::new(SETTINGS.width, SETTINGS.height);
         let bag = SETTINGS.bag();
         let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), SETTINGS.seed);
@@ -84,7 +84,10 @@ impl MultiplayerManager {
     }
 
     pub fn boards(&self) -> (BoardState, BoardState) {
-        (self.players[0].game.to_board_state(), self.players[1].game.to_board_state())
+        (
+            self.players[0].game.to_board_state(),
+            self.players[1].game.to_board_state(),
+        )
     }
 
     pub fn garbages(&self) -> (&[GarbageLine], &[GarbageLine]) {
@@ -123,7 +126,7 @@ impl MultiplayerManager {
 
     /// Resolves garbage for one tick
     pub fn exchange_garbage(&mut self, l1: usize, l2: usize, locked1: bool, locked2: bool) {
-        // Say player 1 has g1 lines of garbage in their queue, and player 2 has 
+        // Say player 1 has g1 lines of garbage in their queue, and player 2 has
         // g2 lines of garbage in their queue.
         let g1 = pending_rows(&self.players[0].garbage_queue);
         let g2 = pending_rows(&self.players[1].garbage_queue);

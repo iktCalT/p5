@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 
-use crate::board::{Board, CellState};
+use crate::board::Board;
 use crate::bot::BoardState;
 use crate::setting::SETTINGS;
 use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
@@ -68,11 +68,15 @@ impl GameManager {
             gravity_decrease,
             lock_delay,
             board,
-            prev_outcome: StepOutcome{lines_cleared: 0, topped_out: false, locked: false},
+            prev_outcome: StepOutcome {
+                lines_cleared: 0,
+                topped_out: false,
+                locked: false,
+            },
             bag_randomizer,
             curr_pos,
             curr_tetromino,
-            lines_cleared: 0
+            lines_cleared: 0,
         }
     }
 
@@ -110,7 +114,9 @@ impl GameManager {
 
             if action == TetrisAction::S {
                 // self.show_with_tetromino();
-                self.tx.send((self.to_board_state(), self.prev_outcome)).unwrap();
+                self.tx
+                    .send((self.to_board_state(), self.prev_outcome))
+                    .unwrap();
                 continue;
             }
 
@@ -218,12 +224,20 @@ impl GameManager {
         }
 
         if topped_out {
-            return Ok(StepOutcome { topped_out: true, lines_cleared: 0, locked: true });
+            return Ok(StepOutcome {
+                topped_out: true,
+                lines_cleared: 0,
+                locked: true,
+            });
         }
 
         let lines_cleared = self.board.elimination();
         self.spawn_next();
-        Ok(StepOutcome { topped_out: false, lines_cleared, locked: true })
+        Ok(StepOutcome {
+            topped_out: false,
+            lines_cleared,
+            locked: true,
+        })
     }
 
     /// Draws the next tetromino from the bag and resets it to the spawn state.

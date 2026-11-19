@@ -3,7 +3,7 @@ use crate::board_arr::BoardArr;
 use crate::bot::{HEIGHT, WIDTH};
 use crate::manager::{ManagerError, StepOutcome};
 use crate::setting::SETTINGS;
-use crate::tetromino::{self, Position, TetrisAction, Tetromino, TetrominoState, TetrominoType};
+use crate::tetromino::{Position, TetrisAction, Tetromino, TetrominoState};
 
 struct SimulationResult {
     tetromino: Tetromino,
@@ -23,15 +23,14 @@ pub struct Simulator<'a> {
     curr_tetromino: Tetromino,
 }
 
-impl <'a> Simulator<'a> {
+impl<'a> Simulator<'a> {
     pub fn new(
         actions: &'a Vec<TetrisAction>,
         board: &'a [[CellState; WIDTH]; HEIGHT],
         time: u64,
         position: &Position,
-        tetromino: &Tetromino
+        tetromino: &Tetromino,
     ) -> Self {
-        
         Self {
             actions,
             time,
@@ -65,24 +64,27 @@ impl <'a> Simulator<'a> {
             last_step_outcome = Some(step_result);
         }
 
-        Some(SimulationResult{
+        Some(SimulationResult {
             tetromino: self.curr_tetromino.clone(),
             position: self.curr_pos,
-            last_step_outcome
+            last_step_outcome,
         })
     }
 
     /// For debugging
     fn show_with_tetromino(&self) {
-        let cells = SETTINGS.state(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation).0
+        let cells = SETTINGS
+            .state(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation)
+            .0
             .iter()
             .map(|offset| *offset + self.curr_pos)
             .collect::<Vec<Position>>();
 
         for r in (0..HEIGHT).rev() {
             for c in 0..WIDTH {
-                if cells.contains(&Position(r as isize, c as isize)) 
-                || self.board.0.get(r).unwrap().get(c).unwrap() == &CellState::Filled {
+                if cells.contains(&Position(r as isize, c as isize))
+                    || self.board.0.get(r).unwrap().get(c).unwrap() == &CellState::Filled
+                {
                     print!("o")
                 }
             }
@@ -90,14 +92,13 @@ impl <'a> Simulator<'a> {
         }
     }
 
-    /// Advances the game by exactly one frame for the given action and return report. 
-    //  For accomodating Multiplayer! 
-    /// A coordinator can `step` several boards in lockstep and react to 
+    /// Advances the game by exactly one frame for the given action and return report.
+    //  For accomodating Multiplayer!
+    /// A coordinator can `step` several boards in lockstep and react to
     // `lines_cleared` / `topped_out` between frames.
     pub fn step(&mut self, action: TetrisAction) -> Result<StepOutcome, ManagerError> {
-
-        // (2) Perform the action for this frame. 
-        // Soft (D) lowers gravity & cont; 
+        // (2) Perform the action for this frame.
+        // Soft (D) lowers gravity & cont;
         // Hard (H) moves piece to the floor and returns None.
         let soft_drop = action == TetrisAction::D;
         if self.movement(action).is_none() {
@@ -136,7 +137,10 @@ impl <'a> Simulator<'a> {
     // Otherwise clears lines, draws the next piece and returns `Ok(false)`.
     fn simulate_lock_piece(&mut self) -> Result<StepOutcome, ManagerError> {
         let cells: Vec<Position> = self
-            .curr_tetromino.state().0.iter()
+            .curr_tetromino
+            .state()
+            .0
+            .iter()
             .map(|point| self.curr_pos + point.clone())
             .collect();
 
@@ -151,12 +155,20 @@ impl <'a> Simulator<'a> {
         }
 
         if topped_out {
-            return Ok(StepOutcome { topped_out: true, lines_cleared: 0, locked: true });
+            return Ok(StepOutcome {
+                topped_out: true,
+                lines_cleared: 0,
+                locked: true,
+            });
         }
 
         let lines_cleared = self.board.eliminated_lines();
 
-        Ok(StepOutcome { topped_out: false, lines_cleared, locked: true })
+        Ok(StepOutcome {
+            topped_out: false,
+            lines_cleared,
+            locked: true,
+        })
     }
 
     // Check if next state valid
@@ -176,7 +188,10 @@ impl <'a> Simulator<'a> {
     pub fn movement(&mut self, action: TetrisAction) -> Option<bool> {
         match action {
             TetrisAction::C => {
-                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.clockwise());
+                let offsets = SETTINGS.wall_kick(
+                    &self.curr_tetromino.ttype,
+                    &self.curr_tetromino.rotation.clockwise(),
+                );
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
@@ -189,9 +204,12 @@ impl <'a> Simulator<'a> {
                     }
                 }
                 Some(false)
-            },
+            }
             TetrisAction::W => {
-                let offsets = SETTINGS.wall_kick(&self.curr_tetromino.ttype, &self.curr_tetromino.rotation.counter_clockwise());
+                let offsets = SETTINGS.wall_kick(
+                    &self.curr_tetromino.ttype,
+                    &self.curr_tetromino.rotation.counter_clockwise(),
+                );
 
                 for offset in offsets {
                     let Ok(new_state) = self.curr_tetromino.peek_rotate(action) else {
@@ -204,13 +222,13 @@ impl <'a> Simulator<'a> {
                     }
                 }
                 Some(false)
-            },
+            }
             TetrisAction::D => {
                 // Soft drop shouldn't make the piece move down directly; it only
-                // lowers gravity for this frame (in run function!). 
+                // lowers gravity for this frame (in run function!).
                 // Old impl made D into an instant 1-row drop.
                 Some(true)
-            },
+            }
             TetrisAction::L => {
                 let offset = Position(-1, 0);
                 if self.is_valid_state(&self.curr_tetromino.state(), offset) {
@@ -218,7 +236,7 @@ impl <'a> Simulator<'a> {
                     return Some(true);
                 }
                 Some(false)
-            },
+            }
             TetrisAction::R => {
                 let offset = Position(1, 0);
 
@@ -227,7 +245,7 @@ impl <'a> Simulator<'a> {
                     return Some(true);
                 }
                 Some(false)
-            },
+            }
             TetrisAction::E => Some(true),
             TetrisAction::H => {
                 let mut offset = Position(0, -1);
@@ -236,9 +254,9 @@ impl <'a> Simulator<'a> {
                 }
                 self.curr_pos += offset + Position(0, 1);
                 None
-            },
+            }
             TetrisAction::S => panic!(),
-            TetrisAction::Q => panic!()
+            TetrisAction::Q => panic!(),
         }
     }
 }
