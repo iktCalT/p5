@@ -1,4 +1,3 @@
-use std::result;
 use std::sync::mpsc::{Receiver, Sender};
 
 use crate::board::{Board, CellState};
@@ -98,7 +97,7 @@ impl GameManager {
             .as_string_with_tetromino(&self.curr_tetromino, &self.curr_pos)
     }
 
-    pub fn run(&mut self) -> Result<(), ManagerError> {
+    pub fn run(&mut self) -> Result<usize, ManagerError> {
         loop {
             // TODO input action
             let Ok(action) = self.rx.recv() else {
@@ -120,10 +119,10 @@ impl GameManager {
             self.prev_outcome = rst;
             self.prev_outcome.lines_cleared = self.lines_cleared;
             if rst.topped_out {
-                return Ok(());
+                return Ok(self.lines_cleared);
             }
         }
-        Ok(())
+        Ok(self.lines_cleared)
     }
 
     /// Advances the game by exactly one frame for the given action and return report.

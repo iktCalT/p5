@@ -1,14 +1,15 @@
 use std::collections::VecDeque;
 use std::fmt::Display;
+use std::sync::mpsc::Sender;
 use std::sync::{
     Arc, Condvar, Mutex, RwLock,
     mpsc::{self, Receiver},
 };
 use std::thread::{self, JoinHandle};
 
-use crate::bot::CellState::Filled;
+use crate::manager::GameManager;
 use crate::setting::SETTINGS;
-use crate::tetromino::{self, Position, Rotation};
+use crate::tetromino::{self, Position, Rotation, Tetromino};
 
 pub static WIDTH: usize = 10;
 pub static HEIGHT: usize = 20;
@@ -143,7 +144,7 @@ struct SpmcQueue {
 pub struct SimulatorBot {
     shared_board: Arc<RwLock<BoardState>>,
     moves_to_sim: Arc<(Mutex<SpmcQueue>, Condvar)>, //
-    scores_rx: Receiver<(usize, i32)>,              // mpsc to receive scores from threads
+    scores_rx: Receiver<(usize, f64)>,              // mpsc to receive scores from threads
     workers: Vec<JoinHandle<()>>,                   // thread pool
     plan: VecDeque<TetrisAction>,                   // actual plan
 }
@@ -250,35 +251,84 @@ impl SimulatorBot {
      *
      * score: A1 *number of cells filled below the peak
      */
-    fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> i32 {
-        // tunable params
-        let A1 = 10;
-        let A2 = 20;
+    // fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> f64 {
+    //     // tunable params
+    //     let A1 = 10;
+    //     let A2 = 20;
 
-        let old_peak: isize = (0..HEIGHT)
-            .rev()
-            .find(|&row| board[row].iter().any(|&cell| cell == CellState::Filled))
-            .map_or(-1, |row| row as isize);
+    //     let old_peak: isize = (0..HEIGHT)
+    //         .rev()
+    //         .find(|&row| board[row].iter().any(|&cell| cell == CellState::Filled))
+    //         .map_or(-1, |row| row as isize);
 
-        let mut score: i32 = 0;
-        for &(_, row) in landed {
-            if (row as isize) <= old_peak {
-                let diff = old_peak - row as isize + 1;
-                score += A1 * (diff * diff) as i32;
-            }
-        }
+    //     let mut score: i32 = 0;
+    //     for &(_, row) in landed {
+    //         if (row as isize) <= old_peak {
+    //             let diff = old_peak - row as isize + 1;
+    //             score += A1 * (diff * diff) as i32;
+    //         }
+    //     }
 
         
-        for (col, row) in landed {
-            let mut cur_row = *row as isize - 1;
-            while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
-                cur_row = cur_row - 1;
-                score -= A2;
+    //     for (col, row) in landed {
+    //         let mut cur_row = *row as isize - 1;
+    //         while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
+    //             cur_row = cur_row - 1;
+    //             score -= A2;
+    //         }
+    //     }
+
+    //     score as f64
+    //     // Add additional heuristics if this doesn't do well enough ...
+    // }
+
+    // https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/?utm_source=chatgpt.com
+    fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> f64 {
+        // tunable params
+        const A: f64 = -0.510066;
+        const B: f64 = 0.760666;
+        const C: f64 = -0.356630;
+        const D: f64 = -0.184483;
+
+        let mut aggregate_height: usize = 0;
+        let mut cleared_lines: usize = 0;
+        let mut holes: usize = 0;
+        let mut bumpiness: usize = 0;
+
+        let mut heights: [usize; WIDTH] = [0; WIDTH];
+
+        for row in (0..HEIGHT).rev() {
+            let mut clear = true;
+            for col in 0..WIDTH {
+                let filled = board[row][col] == CellState::Filled || landed.contains(&(col, row));
+                if !filled {
+                    clear = false;
+                    if heights[col] != 0 {
+                        holes += 1;
+                    }
+                }
+                if filled && heights[col] == 0 {
+                    heights[col] = row + 1;
+                }
+            }
+            if clear {
+                cleared_lines += 1;
             }
         }
 
+        for i in 0..WIDTH {
+            aggregate_height += heights[i];
+            if i >= 1 {
+                bumpiness += heights[i].abs_diff(heights[i-1]);
+            }
+        }
+
+        let score = A * aggregate_height as f64
+            + B * cleared_lines as f64
+            + C * holes as f64
+            + D * bumpiness as f64;
+
         score
-        // Add additional heuristics if this doesn't do well enough ...
     }
 
     fn build_plan(rot_idx: usize, dx: isize) -> Vec<TetrisAction> {
@@ -317,7 +367,7 @@ impl SinglePlayerBot for SimulatorBot {
             Condvar::new(),
         ));
 
-        let (scores_tx, scores_rx) = mpsc::channel::<(usize, i32)>();
+        let (scores_tx, scores_rx) = mpsc::channel::<(usize, f64)>();
 
         let mut workers = Vec::with_capacity(NUM_WORKERS);
         for _ in 0..NUM_WORKERS {
@@ -348,7 +398,7 @@ impl SinglePlayerBot for SimulatorBot {
                         let state_ref = board_ref.read().unwrap();
                         match SimulatorBot::find_landing_cells(&state_ref, job.rot_idx, job.dx) {
                             Some(landed) => SimulatorBot::eval(&state_ref.board, &landed),
-                            None => i32::MIN,
+                            None => f64::MIN,
                         }
                     };
 
@@ -403,7 +453,7 @@ impl SinglePlayerBot for SimulatorBot {
 
             // process all the scores for all the candidates
             let mut best_id = 0usize;
-            let mut best_score = i32::MIN;
+            let mut best_score = f64::MIN;
             for _ in 0..candidates.len() {
                 if let Ok((id, score)) = self.scores_rx.recv() {
                     if score > best_score || (score == best_score && id < best_id) {
@@ -414,7 +464,7 @@ impl SinglePlayerBot for SimulatorBot {
             }
 
             // no valid moves
-            if best_score == i32::MIN {
+            if best_score == f64::MIN {
                 self.plan.push_back(TetrisAction::H);
             } else {
                 // extend with best move
@@ -436,6 +486,34 @@ impl Drop for SimulatorBot {
         }
     }
 }
+
+/// Another bot
+// struct SecondSimulatorBot {
+//     workers: Vec<JoinHandle<()>>,
+// }
+
+// impl SecondSimulatorBot {
+//     fn worker_start() {
+
+//     }
+
+//     /// https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/?utm_source=chatgpt.com
+//     fn eval() {
+
+//     }
+// }
+
+// impl SinglePlayerBot for SecondSimulatorBot {
+//     fn new() -> Self {
+//         Self {
+//             workers: Vec::new()
+//         }
+//     }
+
+//     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
+
+//     }
+// }
 
 pub struct GarbageLine {
     pub num_rows_to_create: usize,
