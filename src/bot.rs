@@ -1,12 +1,18 @@
 use std::collections::VecDeque;
 use std::fmt::Display;
+use std::path::Path;
+use std::sync::mpsc::{Sender, channel};
 use std::sync::{
     Arc, Condvar, Mutex, RwLock,
     mpsc::{self, Receiver},
 };
-use std::thread::{self, JoinHandle};
+use std::thread::{self, JoinHandle, spawn};
 
-use crate::setting::SETTINGS;
+use crate::bag_randomizer::BagRandomizer;
+use crate::board::Board;
+use crate::manager::{GameManager, StepOutcome};
+use crate::multiplayer::MultiplayerManager;
+use crate::setting::{self, SETTINGS, Settings};
 use crate::tetromino::{self, Position, Rotation};
 
 pub const WIDTH: usize = 10;
@@ -115,15 +121,19 @@ pub struct BoardState {
 }
 
 pub trait SinglePlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
+    fn get_move(&mut self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// If the bot is playing, this will likely be the result of
+    /// `bot.get_move()`.
+    fn update_with(&mut self, action: TetrisAction);
 }
 
-pub use SinglePlayerBot as Bot;
 /**
  * SPMC queue for main thread queuing jobs to consumer threads to simulate and eval
  */
@@ -345,8 +355,50 @@ impl SimulatorBot {
     }
 }
 
-impl SinglePlayerBot for SimulatorBot {
-    fn new() -> Self {
+pub struct MyBot {
+    bot: SimulatorBot,
+    tx: Sender<tetromino::TetrisAction>,
+    rx_outcome: Receiver<(BoardState, StepOutcome)>
+}
+
+impl SinglePlayerBot for MyBot {
+    fn new(config: &Path) -> Self {
+        let cfg = Settings::new(config.into());
+        let (tx, rx) = channel::<tetromino::TetrisAction>();
+        let (tx_outcome, rx_outcome) = channel();
+
+        let bag = cfg.bag();
+        let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), cfg.seed);
+        let board = Board::new(10, 20);
+        let mut manager = GameManager::new(cfg.gravity, cfg.gravity_decrease, cfg.lock_delay, rx, tx_outcome, Board::new(cfg.width, cfg.height), bag_randomizer);
+        let handle = spawn(move || manager.run());
+        drop(handle);
+        Self {
+            bot: SimulatorBot::new(), 
+            tx,
+            rx_outcome
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        self.tx.send(tetromino::TetrisAction::S).unwrap();
+        let Ok(outcome) = self.rx_outcome.recv() else {
+            return TetrisAction::E;
+        };
+
+        if outcome.1.topped_out {
+            return TetrisAction::E;
+        }
+        self.bot.get_move(&outcome.0)
+    }
+
+    fn update_with(&mut self, action: TetrisAction) {
+        self.tx.send((&action).into()).unwrap();
+    }
+}
+
+impl SimulatorBot {
+    pub fn new() -> Self {
         let init_board = BoardState {
             tetromino_row: HEIGHT,
             tetromino_col: (WIDTH - 1) / 2,
@@ -414,7 +466,7 @@ impl SinglePlayerBot for SimulatorBot {
         }
     }
 
-    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
+    pub fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
         if board_state.tetromino_row == HEIGHT
             && board_state.tetromino_col == (WIDTH - 1) / 2
             && board_state.tetromino_rotation == 0
@@ -518,18 +570,17 @@ pub struct GarbageLine {
 }
 
 pub trait MultiPlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(
-        &mut self,
-        p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction;
+    fn get_move(&mut self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// `p_actions[i]` is the action taken by player `i`. This should be called
+    /// every frame.
+    fn update_with(&mut self, p_actions: &[TetrisAction]);
 }
 
 pub struct GoodMultiBot {
@@ -542,7 +593,7 @@ impl Display for GoodMultiBot {
     }
 }
 
-impl MultiPlayerBot for GoodMultiBot {
+impl GoodMultiBot {
     fn new() -> Self {
         Self {
             bot: SimulatorBot::new(),
@@ -568,7 +619,7 @@ impl Display for BadMultiBot {
     }
 }
 
-impl MultiPlayerBot for BadMultiBot {
+impl BadMultiBot {
     fn new() -> Self {
         Self {}
     }
@@ -581,5 +632,52 @@ impl MultiPlayerBot for BadMultiBot {
         _p2_garbage: &[GarbageLine],
     ) -> TetrisAction {
         TetrisAction::H
+    }
+}
+
+pub struct GoodBot {
+    bot: GoodMultiBot,
+    manager: MultiplayerManager
+}
+
+impl MultiPlayerBot for GoodBot {
+    fn new(config: &Path) -> Self {
+        Self {
+            bot: GoodMultiBot::new(), 
+            manager: MultiplayerManager::new()
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        let (board1, board2) = self.manager.boards();
+
+        let (garbage1, garbage2) = (Vec::<GarbageLine>::new(), Vec::<GarbageLine>::new());
+        self.bot.get_move(&board1, &garbage1, &board2, &garbage2)
+    }
+
+    fn update_with(&mut self, p_actions: &[TetrisAction]){
+        self.manager.tick((&p_actions[0]).into(), (&p_actions[1]).into());
+    }
+}
+
+pub struct BadBot {
+    bot: GoodMultiBot,
+    manager: MultiplayerManager
+}
+
+impl MultiPlayerBot for BadBot {
+    fn new(config: &Path) -> Self {
+        Self {
+            bot: GoodMultiBot::new(), 
+            manager: MultiplayerManager::new()
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        TetrisAction::H
+    }
+
+    fn update_with(&mut self, p_actions: &[TetrisAction]){
+        self.manager.tick((&p_actions[0]).into(), (&p_actions[1]).into());
     }
 }

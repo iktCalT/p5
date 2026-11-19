@@ -6,9 +6,9 @@ use std::iter::zip;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
-use p5_tetris::bot::BadMultiBot;
+use p5_tetris::bot::BadBot;
 use p5_tetris::bot::GarbageLine;
-use p5_tetris::bot::GoodMultiBot;
+use p5_tetris::bot::GoodBot;
 use p5_tetris::bot::MultiPlayerBot;
 use p5_tetris::multiplayer::MultiplayerManager;
 use p5_tetris::setting::SETTINGS;
@@ -35,6 +35,7 @@ fn main() {
     let mut is_p1_good = true;
     let mut path_1: Option<PathBuf> = None;
     let mut path_2: Option<PathBuf> = None;
+    let mut resources: Option<PathBuf> = None;
 
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -49,13 +50,14 @@ fn main() {
             }
             "--resources" => {
                 let dir = args.next().expect("Expected directory");
+                resources = Some(dir.clone().into());
                 set_resources_dir(PathBuf::from(dir));
             }
             "--list-bots" => {
-                let goodbot = GoodMultiBot::new();
-                let badbot = BadMultiBot::new();
-                println!("{}", goodbot);
-                println!("{}", badbot);
+                let goodbot = GoodBot::new(&resources.clone().unwrap());
+                let badbot = BadBot::new(&resources.unwrap());
+                println!("goodbot");
+                println!("badbot");
                 return;
             }
             "--trace-bot-run" => {
@@ -94,7 +96,7 @@ fn main() {
                     goodbot_file = File::create(path_2.unwrap()).unwrap();
                     badbot_file = File::create(path_1.unwrap()).unwrap();
                 }
-                simulate_multi_bots(goodbot_file, badbot_file);
+                simulate_multi_bots(goodbot_file, badbot_file, resources.unwrap());
                 return;
             }
             _ => panic!("Unknown arg"),
@@ -167,9 +169,9 @@ fn multi_player(input_paths: &Vec<PathBuf>) {
     }
 }
 
-fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
-    let mut goodbot = GoodMultiBot::new();
-    let mut badbot = BadMultiBot::new();
+fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File, resources: PathBuf) {
+    let mut goodbot = GoodBot::new(&resources);
+    let mut badbot = BadBot::new(&resources);
 
     let mut manager = MultiplayerManager::new();
 
@@ -179,8 +181,8 @@ fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
         // TODO: finish manager.garbages()
         // let (garbage1, garbage2) = manager.garbages();
         let (garbage1, garbage2) = (Vec::<GarbageLine>::new(), Vec::<GarbageLine>::new());
-        let action1 = goodbot.get_move(&board1, &garbage1, &board2, &garbage2);
-        let action2 = badbot.get_move(&board2, &garbage2, &board1, &garbage1);
+        let action1 = goodbot.get_move();
+        let action2 = badbot.get_move();
         manager.tick((&action1).into(), (&action2).into());
 
         goodbot_file
