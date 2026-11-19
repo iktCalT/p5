@@ -1,7 +1,5 @@
-use std::path::PathBuf;
-
 use p5_tetris::{
-    setting::{SETTINGS, Settings},
+    setting::SETTINGS,
     tetromino::{Position, Rotation, TetrominoState, TetrominoType},
 };
 

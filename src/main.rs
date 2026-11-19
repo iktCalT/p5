@@ -6,14 +6,19 @@ use std::iter::zip;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
-use p5_tetris::bot::BadMultiBot;
+use p5_tetris::bot::BadBot;
 use p5_tetris::bot::GarbageLine;
-use p5_tetris::bot::GoodMultiBot;
+use p5_tetris::bot::GoodBot;
 use p5_tetris::bot::MultiPlayerBot;
 use p5_tetris::multiplayer::MultiplayerManager;
 use p5_tetris::setting::SETTINGS;
 use p5_tetris::setting::set_resources_dir;
-use p5_tetris::{bag_randomizer::BagRandomizer, board::{Board, SPAWN_BUFFER}, manager::GameManager, tetromino::TetrisAction};
+use p5_tetris::{
+    bag_randomizer::BagRandomizer,
+    board::{Board, SPAWN_BUFFER},
+    manager::GameManager,
+    tetromino::TetrisAction,
+};
 
 // #[derive(Default, Debug)]
 // struct CliArgs {
@@ -27,8 +32,10 @@ use p5_tetris::{bag_randomizer::BagRandomizer, board::{Board, SPAWN_BUFFER}, man
 fn main() {
     let mut sp_path: Option<PathBuf> = None;
     let mut mp_paths: Vec<PathBuf> = Vec::new();
-    let mut goodbot_path: Option<PathBuf> = None;
-    let mut badbot_path: Option<PathBuf> = None;
+    let mut is_p1_good = true;
+    let mut path_1: Option<PathBuf> = None;
+    let mut path_2: Option<PathBuf> = None;
+    let mut resources: Option<PathBuf> = None;
 
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -43,28 +50,53 @@ fn main() {
             }
             "--resources" => {
                 let dir = args.next().expect("Expected directory");
+                resources = Some(dir.clone().into());
                 set_resources_dir(PathBuf::from(dir));
             }
             "--list-bots" => {
-                let goodbot = GoodMultiBot::new();
-                let badbot = BadMultiBot::new();
-                println!("{}", goodbot);
-                println!("{}", badbot);
+                let goodbot = GoodBot::new(&resources.clone().unwrap());
+                let badbot = BadBot::new(&resources.unwrap());
+                println!("goodbot");
+                println!("badbot");
+                return;
             }
             "--trace-bot-run" => {
-                for _ in 0..2 {
+                for _ in 0..4 {
                     match args.next().expect("missing bot name").as_str() {
-                        "good-bot" => goodbot_path = Some(PathBuf::from(args.next().expect("missing good bot path"))),
-                        "bad-bot" => badbot_path = Some(PathBuf::from(args.next().expect("missing bad bot path"))),
-                        _ => panic!("Invalid arguments")
+                        "--p1" => {
+                            match args.next().expect("missing p1").as_str() {
+                                "good-bot" => is_p1_good = true,
+                                "bad-bot" => is_p1_good = false,
+                                _ => panic!()
+                            }
+                        }
+                        "--p2" => {
+                            match args.next().expect("missing p1").as_str() {
+                                "good-bot" => is_p1_good = false,
+                                "bad-bot" => is_p1_good = true,
+                                _ => panic!()
+                            }
+                        }
+                        "--o1" => {
+                            path_1 = Some(PathBuf::from(args.next().expect("missing good bot path")))
+                        }
+                        "--o2" => {
+                            path_2 = Some(PathBuf::from(args.next().expect("missing bad bot path")))
+                        }
+                        _ => panic!("Invalid arguments"),
                     }
                 }
-                let (Some(goodbot_path), Some(badbot_path)) = (goodbot_path, badbot_path) else {
-                    panic!("Invalid arguments");
-                };
-                let goodbot_file = File::create(goodbot_path).unwrap();
-                let badbot_file = File::create(badbot_path).unwrap();
-                simulate_multi_bots(goodbot_file, badbot_file);
+
+                let goodbot_file;
+                let badbot_file;
+                if is_p1_good {
+                    goodbot_file = File::create(path_1.unwrap()).unwrap();
+                    badbot_file = File::create(path_2.unwrap()).unwrap();
+                } else {
+                    goodbot_file = File::create(path_2.unwrap()).unwrap();
+                    badbot_file = File::create(path_1.unwrap()).unwrap();
+                }
+                simulate_multi_bots(goodbot_file, badbot_file, resources.unwrap());
                 return;
             }
             _ => panic!("Unknown arg"),
@@ -84,7 +116,7 @@ fn main() {
 
 fn single_player(input_path: &PathBuf) {
     let (tx, rx) = channel::<TetrisAction>();
-    let (tx_outcome, rx_outcome) = channel();
+    let (tx_outcome, _rx_outcome) = channel();
 
     let content = fs::read_to_string(&input_path).expect("error reading file ");
     for c in content.chars().filter(|c| !c.is_ascii_whitespace()) {
@@ -137,9 +169,9 @@ fn multi_player(input_paths: &Vec<PathBuf>) {
     }
 }
 
-fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
-    let mut goodbot = GoodMultiBot::new();
-    let mut badbot = BadMultiBot::new();
+fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File, resources: PathBuf) {
+    let mut goodbot = GoodBot::new(&resources);
+    let mut badbot = BadBot::new(&resources);
 
     let mut manager = MultiplayerManager::new();
 
@@ -149,11 +181,13 @@ fn simulate_multi_bots(mut goodbot_file: File, mut badbot_file: File) {
         // TODO: finish manager.garbages()
         // let (garbage1, garbage2) = manager.garbages();
         let (garbage1, garbage2) = (Vec::<GarbageLine>::new(), Vec::<GarbageLine>::new());
-        let action1 = goodbot.get_move(&board1, &garbage1, &board2, &garbage2);
-        let action2 = badbot.get_move(&board2, &garbage2, &board1, &garbage1);
+        let action1 = goodbot.get_move();
+        let action2 = badbot.get_move();
         manager.tick((&action1).into(), (&action2).into());
 
-        goodbot_file.write_all(&[Into::<u8>::into(action1)]).unwrap();
+        goodbot_file
+            .write_all(&[Into::<u8>::into(action1)])
+            .unwrap();
         badbot_file.write_all(&[Into::<u8>::into(action2)]).unwrap();
     }
 

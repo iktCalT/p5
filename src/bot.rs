@@ -1,17 +1,22 @@
 use std::collections::VecDeque;
 use std::fmt::Display;
+use std::path::Path;
+use std::sync::mpsc::{Sender, channel};
 use std::sync::{
     Arc, Condvar, Mutex, RwLock,
     mpsc::{self, Receiver},
 };
-use std::thread::{self, JoinHandle};
+use std::thread::{self, JoinHandle, spawn};
 
-use crate::bot::CellState::Filled;
-use crate::setting::SETTINGS;
+use crate::bag_randomizer::BagRandomizer;
+use crate::board::Board;
+use crate::manager::{GameManager, StepOutcome};
+use crate::multiplayer::MultiplayerManager;
+use crate::setting::{self, SETTINGS, Settings};
 use crate::tetromino::{self, Position, Rotation};
 
-pub static WIDTH: usize = 10;
-pub static HEIGHT: usize = 20;
+pub const WIDTH: usize = 10;
+pub const HEIGHT: usize = 20;
 const SPAWN_BUFFER: isize = 2;
 const NUM_WORKERS: usize = 4;
 const ROT_PLANS: [&[TetrisAction]; 4] = [
@@ -81,7 +86,7 @@ impl Into<TetrisAction> for &tetromino::TetrisAction {
             tetromino::TetrisAction::D => TetrisAction::D,
             tetromino::TetrisAction::H => TetrisAction::H,
             tetromino::TetrisAction::E => TetrisAction::E,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -89,13 +94,13 @@ impl Into<TetrisAction> for &tetromino::TetrisAction {
 impl Into<u8> for TetrisAction {
     fn into(self) -> u8 {
         match self {
-            TetrisAction::C => b'C', 
-            TetrisAction::W => b'W', 
-            TetrisAction::L => b'L', 
-            TetrisAction::R => b'R', 
-            TetrisAction::D => b'D', 
-            TetrisAction::H => b'H', 
-            TetrisAction::E => b'E', 
+            TetrisAction::C => b'C',
+            TetrisAction::W => b'W',
+            TetrisAction::L => b'L',
+            TetrisAction::R => b'R',
+            TetrisAction::D => b'D',
+            TetrisAction::H => b'H',
+            TetrisAction::E => b'E',
         }
     }
 }
@@ -116,15 +121,19 @@ pub struct BoardState {
 }
 
 pub trait SinglePlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction;
+    fn get_move(&mut self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// If the bot is playing, this will likely be the result of
+    /// `bot.get_move()`.
+    fn update_with(&mut self, action: TetrisAction);
 }
 
-pub use SinglePlayerBot as Bot;
 /**
  * SPMC queue for main thread queuing jobs to consumer threads to simulate and eval
  */
@@ -143,7 +152,7 @@ struct SpmcQueue {
 pub struct SimulatorBot {
     shared_board: Arc<RwLock<BoardState>>,
     moves_to_sim: Arc<(Mutex<SpmcQueue>, Condvar)>, //
-    scores_rx: Receiver<(usize, i32)>,              // mpsc to receive scores from threads
+    scores_rx: Receiver<(usize, f64)>,              // mpsc to receive scores from threads
     workers: Vec<JoinHandle<()>>,                   // thread pool
     plan: VecDeque<TetrisAction>,                   // actual plan
 }
@@ -155,7 +164,7 @@ impl SimulatorBot {
             1 => Rotation::Right,
             2 => Rotation::Inverse,
             3 => Rotation::Left,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -250,35 +259,83 @@ impl SimulatorBot {
      *
      * score: A1 *number of cells filled below the peak
      */
-    fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> i32 {
+    // fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> f64 {
+    //     // tunable params
+    //     let A1 = 10;
+    //     let A2 = 20;
+
+    //     let old_peak: isize = (0..HEIGHT)
+    //         .rev()
+    //         .find(|&row| board[row].iter().any(|&cell| cell == CellState::Filled))
+    //         .map_or(-1, |row| row as isize);
+
+    //     let mut score: i32 = 0;
+    //     for &(_, row) in landed {
+    //         if (row as isize) <= old_peak {
+    //             let diff = old_peak - row as isize + 1;
+    //             score += A1 * (diff * diff) as i32;
+    //         }
+    //     }
+
+    //     for (col, row) in landed {
+    //         let mut cur_row = *row as isize - 1;
+    //         while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
+    //             cur_row = cur_row - 1;
+    //             score -= A2;
+    //         }
+    //     }
+
+    //     score as f64
+    //     // Add additional heuristics if this doesn't do well enough ...
+    // }
+
+    // https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/?utm_source=chatgpt.com
+    fn eval(board: &[[CellState; WIDTH]; HEIGHT], landed: &[(usize, usize); 4]) -> f64 {
         // tunable params
-        let A1 = 10;
-        let A2 = 20;
+        const A: f64 = -0.510066;
+        const B: f64 = 0.760666;
+        const C: f64 = -0.356630;
+        const D: f64 = -0.184483;
 
-        let old_peak: isize = (0..HEIGHT)
-            .rev()
-            .find(|&row| board[row].iter().any(|&cell| cell == CellState::Filled))
-            .map_or(-1, |row| row as isize);
+        let mut aggregate_height: usize = 0;
+        let mut cleared_lines: usize = 0;
+        let mut holes: usize = 0;
+        let mut bumpiness: usize = 0;
 
-        let mut score: i32 = 0;
-        for &(_, row) in landed {
-            if (row as isize) <= old_peak {
-                let diff = old_peak - row as isize + 1;
-                score += A1 * (diff * diff) as i32;
+        let mut heights: [usize; WIDTH] = [0; WIDTH];
+
+        for row in (0..HEIGHT).rev() {
+            let mut clear = true;
+            for col in 0..WIDTH {
+                let filled = board[row][col] == CellState::Filled || landed.contains(&(col, row));
+                if !filled {
+                    clear = false;
+                    if heights[col] != 0 {
+                        holes += 1;
+                    }
+                }
+                if filled && heights[col] == 0 {
+                    heights[col] = row + 1;
+                }
+            }
+            if clear {
+                cleared_lines += 1;
             }
         }
 
-        
-        for (col, row) in landed {
-            let mut cur_row = *row as isize - 1;
-            while cur_row >= 0 && !landed.contains(&(*col, cur_row as usize)) && board[cur_row as usize][*col] == CellState::Empty {
-                cur_row = cur_row - 1;
-                score -= A2;
+        for i in 0..WIDTH {
+            aggregate_height += heights[i];
+            if i >= 1 {
+                bumpiness += heights[i].abs_diff(heights[i - 1]);
             }
         }
+
+        let score = A * aggregate_height as f64
+            + B * cleared_lines as f64
+            + C * holes as f64
+            + D * bumpiness as f64;
 
         score
-        // Add additional heuristics if this doesn't do well enough ...
     }
 
     fn build_plan(rot_idx: usize, dx: isize) -> Vec<TetrisAction> {
@@ -298,8 +355,50 @@ impl SimulatorBot {
     }
 }
 
-impl SinglePlayerBot for SimulatorBot {
-    fn new() -> Self {
+pub struct MyBot {
+    bot: SimulatorBot,
+    tx: Sender<tetromino::TetrisAction>,
+    rx_outcome: Receiver<(BoardState, StepOutcome)>
+}
+
+impl SinglePlayerBot for MyBot {
+    fn new(config: &Path) -> Self {
+        let cfg = Settings::new(config.into());
+        let (tx, rx) = channel::<tetromino::TetrisAction>();
+        let (tx_outcome, rx_outcome) = channel();
+
+        let bag = cfg.bag();
+        let bag_randomizer = BagRandomizer::from_parts(bag.into_iter(), cfg.seed);
+        let board = Board::new(10, 20);
+        let mut manager = GameManager::new(cfg.gravity, cfg.gravity_decrease, cfg.lock_delay, rx, tx_outcome, Board::new(cfg.width, cfg.height), bag_randomizer);
+        let handle = spawn(move || manager.run());
+        drop(handle);
+        Self {
+            bot: SimulatorBot::new(), 
+            tx,
+            rx_outcome
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        self.tx.send(tetromino::TetrisAction::S).unwrap();
+        let Ok(outcome) = self.rx_outcome.recv() else {
+            return TetrisAction::E;
+        };
+
+        if outcome.1.topped_out {
+            return TetrisAction::E;
+        }
+        self.bot.get_move(&outcome.0)
+    }
+
+    fn update_with(&mut self, action: TetrisAction) {
+        self.tx.send((&action).into()).unwrap();
+    }
+}
+
+impl SimulatorBot {
+    pub fn new() -> Self {
         let init_board = BoardState {
             tetromino_row: HEIGHT,
             tetromino_col: (WIDTH - 1) / 2,
@@ -317,7 +416,7 @@ impl SinglePlayerBot for SimulatorBot {
             Condvar::new(),
         ));
 
-        let (scores_tx, scores_rx) = mpsc::channel::<(usize, i32)>();
+        let (scores_tx, scores_rx) = mpsc::channel::<(usize, f64)>();
 
         let mut workers = Vec::with_capacity(NUM_WORKERS);
         for _ in 0..NUM_WORKERS {
@@ -348,7 +447,7 @@ impl SinglePlayerBot for SimulatorBot {
                         let state_ref = board_ref.read().unwrap();
                         match SimulatorBot::find_landing_cells(&state_ref, job.rot_idx, job.dx) {
                             Some(landed) => SimulatorBot::eval(&state_ref.board, &landed),
-                            None => i32::MIN,
+                            None => f64::MIN,
                         }
                     };
 
@@ -367,7 +466,7 @@ impl SinglePlayerBot for SimulatorBot {
         }
     }
 
-    fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
+    pub fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
         if board_state.tetromino_row == HEIGHT
             && board_state.tetromino_col == (WIDTH - 1) / 2
             && board_state.tetromino_rotation == 0
@@ -403,7 +502,7 @@ impl SinglePlayerBot for SimulatorBot {
 
             // process all the scores for all the candidates
             let mut best_id = 0usize;
-            let mut best_score = i32::MIN;
+            let mut best_score = f64::MIN;
             for _ in 0..candidates.len() {
                 if let Ok((id, score)) = self.scores_rx.recv() {
                     if score > best_score || (score == best_score && id < best_id) {
@@ -414,7 +513,7 @@ impl SinglePlayerBot for SimulatorBot {
             }
 
             // no valid moves
-            if best_score == i32::MIN {
+            if best_score == f64::MIN {
                 self.plan.push_back(TetrisAction::H);
             } else {
                 // extend with best move
@@ -437,25 +536,51 @@ impl Drop for SimulatorBot {
     }
 }
 
+/// Another bot
+// struct SecondSimulatorBot {
+//     workers: Vec<JoinHandle<()>>,
+// }
+
+// impl SecondSimulatorBot {
+//     fn worker_start() {
+
+//     }
+
+//     /// https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/?utm_source=chatgpt.com
+//     fn eval() {
+
+//     }
+// }
+
+// impl SinglePlayerBot for SecondSimulatorBot {
+//     fn new() -> Self {
+//         Self {
+//             workers: Vec::new()
+//         }
+//     }
+
+//     fn get_move(&mut self, board_state: &BoardState) -> TetrisAction {
+
+//     }
+// }
+
 pub struct GarbageLine {
     pub num_rows_to_create: usize,
     pub ticks_till_applied: usize,
 }
 
-
 pub trait MultiPlayerBot {
-    /// Create a new bot.
-    fn new() -> Self;
+    /// Create a new bot given the path to the resources dir.
+    fn new(config: &Path) -> Self;
 
     /// Gets an action to perform based on the board state. This should be called
     /// every frame.
-    fn get_move(
-        &mut self,
-        p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction;
+    fn get_move(&mut self) -> TetrisAction;
+
+    /// Updates the current bot state assuming the player plays a given action.
+    /// `p_actions[i]` is the action taken by player `i`. This should be called
+    /// every frame.
+    fn update_with(&mut self, p_actions: &[TetrisAction]);
 }
 
 pub struct GoodMultiBot {
@@ -468,22 +593,20 @@ impl Display for GoodMultiBot {
     }
 }
 
-
-impl MultiPlayerBot for GoodMultiBot {
+impl GoodMultiBot {
     fn new() -> Self {
         Self {
-            bot: SimulatorBot::new()
-        } 
+            bot: SimulatorBot::new(),
+        }
     }
 
     fn get_move(
         &mut self,
         p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction
-    {
+        _p1_garbage: &[GarbageLine],
+        _p2_state: &BoardState,
+        _p2_garbage: &[GarbageLine],
+    ) -> TetrisAction {
         self.bot.get_move(p1_state)
     }
 }
@@ -492,23 +615,69 @@ pub struct BadMultiBot {}
 
 impl Display for BadMultiBot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "bad-bot")
+        write!(f, "bad-bot")
     }
 }
 
-impl MultiPlayerBot for BadMultiBot {
+impl BadMultiBot {
     fn new() -> Self {
         Self {}
     }
 
     fn get_move(
         &mut self,
-        p1_state: &BoardState,
-        p1_garbage: &[GarbageLine],
-        p2_state: &BoardState,
-        p2_garbage: &[GarbageLine],
-    ) -> TetrisAction
-    {
+        _p1_state: &BoardState,
+        _p1_garbage: &[GarbageLine],
+        _p2_state: &BoardState,
+        _p2_garbage: &[GarbageLine],
+    ) -> TetrisAction {
         TetrisAction::H
+    }
+}
+
+pub struct GoodBot {
+    bot: GoodMultiBot,
+    manager: MultiplayerManager
+}
+
+impl MultiPlayerBot for GoodBot {
+    fn new(config: &Path) -> Self {
+        Self {
+            bot: GoodMultiBot::new(), 
+            manager: MultiplayerManager::new()
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        let (board1, board2) = self.manager.boards();
+
+        let (garbage1, garbage2) = (Vec::<GarbageLine>::new(), Vec::<GarbageLine>::new());
+        self.bot.get_move(&board1, &garbage1, &board2, &garbage2)
+    }
+
+    fn update_with(&mut self, p_actions: &[TetrisAction]){
+        self.manager.tick((&p_actions[0]).into(), (&p_actions[1]).into());
+    }
+}
+
+pub struct BadBot {
+    bot: GoodMultiBot,
+    manager: MultiplayerManager
+}
+
+impl MultiPlayerBot for BadBot {
+    fn new(config: &Path) -> Self {
+        Self {
+            bot: GoodMultiBot::new(), 
+            manager: MultiplayerManager::new()
+        }
+    }
+
+    fn get_move(&mut self) -> TetrisAction {
+        TetrisAction::H
+    }
+
+    fn update_with(&mut self, p_actions: &[TetrisAction]){
+        self.manager.tick((&p_actions[0]).into(), (&p_actions[1]).into());
     }
 }

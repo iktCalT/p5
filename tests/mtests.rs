@@ -1,11 +1,8 @@
-use std::{sync::mpsc::channel, thread::current};
+use std::sync::mpsc::channel;
 
 use p5_tetris::{
-    bag_randomizer::BagRandomizer,
-    board::Board,
-    manager::GameManager,
-    setting::{SETTINGS, Settings},
-    tetromino::{TetrisAction, TetrominoType},
+    bag_randomizer::BagRandomizer, board::Board, manager::GameManager, setting::SETTINGS,
+    tetromino::TetrisAction,
 };
 
 #[test]
